@@ -1,4 +1,4 @@
-import {prisma} from '../config/database';
+import {prisma} from '../config/db/database';
 import { AppError } from '../middlewares/errorHandler';
 import bcrypt from 'bcryptjs';
 import { UserRole } from '@prisma/client';

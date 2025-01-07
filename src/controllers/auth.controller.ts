@@ -12,7 +12,7 @@ export class AuthController {
 
   login = async (req: Request, res: Response): Promise<void> => {
     try {
-      const validatedData = loginSchema.parse(req.body);
+      const validatedData = loginSchema.parse({body: req.body});
       const result = await this.authService.login(validatedData.body);
       res.json(result);
     } catch (error: any) {
@@ -23,7 +23,9 @@ export class AuthController {
 
   register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const validatedData = registerSchema.parse(req.body);
+      const validatedData = registerSchema.parse({
+        body: req.body
+      });
       const user = await this.authService.register(validatedData.body);
       res.status(201).json({
         message: 'Registration successful. Please check your email to verify your account.',

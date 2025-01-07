@@ -1,8 +1,7 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { db } from './config/database';
+import { db } from './config/db/database';
 import { apiRateLimiter } from './middlewares/rate-limit.middleware';
 import redisClient from './config/redis';
 import { requestLogger } from './middlewares/request-logger.middleware';

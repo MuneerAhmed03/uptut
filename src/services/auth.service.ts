@@ -1,4 +1,4 @@
-import { prisma } from '../config/database';
+import { prisma } from '../config/db/database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { User } from '.prisma/client';

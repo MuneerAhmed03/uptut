@@ -1,4 +1,4 @@
-import { prisma } from '../config/database';
+import { prisma } from '../config/db/database';
 import type { BorrowedBook, Prisma } from '.prisma/client';
 import { sendBookDueReminderEmail } from '../utils/email';
 

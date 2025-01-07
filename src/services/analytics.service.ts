@@ -1,4 +1,4 @@
-import { prisma } from '../config/database';
+import { prisma } from '../config/db/database';
 import type { Book, User, Category } from '.prisma/client';
 
 interface BookAnalytics {
