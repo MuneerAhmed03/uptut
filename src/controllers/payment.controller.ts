@@ -1,14 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { PaymentService } from '../services/payment.service';
-import type { PaymentStatus } from '.prisma/client';
-
-const paymentSchema = z.object({
-  transactionId: z.string().uuid(),
-  paymentMethod: z.enum(['CREDIT_CARD', 'DEBIT_CARD', 'CASH']),
-});
-
-const statusSchema = z.enum(['PENDING', 'PAID', 'FAILED']).optional();
+import { payFineSchema, paymentQuerySchema } from '../models/payment.schema';
 
 const paymentService = new PaymentService();
 
@@ -36,7 +28,7 @@ export const payFine = async (
   next: NextFunction
 ) => {
   try {
-    const validatedData = paymentSchema.parse(req.body);
+    const validatedData = payFineSchema.parse(req.body);
     const userId = req.user!.id;
 
     const result = await paymentService.payFine(
@@ -62,9 +54,9 @@ export const getPaymentHistory = async (
 ) => {
   try {
     const userId = req.user!.id;
-    const status = statusSchema.parse(req.query.status) as PaymentStatus | undefined;
+    const validatedQuery = paymentQuerySchema.parse(req.query);
 
-    const result = await paymentService.getPaymentHistory(userId, status);
+    const result = await paymentService.getPaymentHistory(userId, validatedQuery.status);
 
     res.json({
       status: 'success',

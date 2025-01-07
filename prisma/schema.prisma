@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output = "../../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -22,6 +21,7 @@ model User {
   deletedAt        DateTime?
   borrowedBooks    BorrowedBook[]
   transactions     Transaction[]
+  verificationTokens EmailVerificationToken[]
 }
 
 model Book {
@@ -96,6 +96,15 @@ model CategoriesOnBooks {
   category   Category @relation(fields: [categoryId], references: [id])
 
   @@id([bookId, categoryId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 enum UserRole {

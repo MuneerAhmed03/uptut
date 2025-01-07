@@ -1,8 +1,12 @@
 import { prisma } from '../config/database';
 import type { BorrowedBook, Prisma } from '.prisma/client';
+import { sendBookDueReminderEmail } from '../utils/email';
 
 export class BorrowService {
-  async borrowBook(userId: string, bookId: string, dueDate: Date): Promise<BorrowedBook> {
+  private BORROW_DURATION_DAYS = 14;
+  private FINE_RATE_PER_DAY = 1.0; // $1 per day
+
+  async borrowBook(userId: string, bookId: string): Promise<BorrowedBook> {
     const book = await prisma.book.findUnique({
       where: { id: bookId },
       include: {
@@ -26,6 +30,9 @@ export class BorrowService {
     if (book.borrowedBooks.length > 0) {
       throw new Error('User already has an active borrow for this book');
     }
+
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + this.BORROW_DURATION_DAYS);
 
     return prisma.$transaction(async (tx) => {
       await tx.book.update({
@@ -51,6 +58,22 @@ export class BorrowService {
     });
   }
 
+  calculateFine(borrowedBook: BorrowedBook): number {
+    if (!borrowedBook.dueDate || borrowedBook.returnedAt) {
+      return 0;
+    }
+
+    const currentDate = new Date();
+    const dueDate = new Date(borrowedBook.dueDate);
+
+    if (currentDate <= dueDate) {
+      return 0;
+    }
+
+    const overdueDays = Math.floor((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    return overdueDays * this.FINE_RATE_PER_DAY;
+  }
+
   async returnBook(userId: string, bookId: string): Promise<BorrowedBook> {
     const borrowedBook = await prisma.borrowedBook.findFirst({
       where: {
@@ -64,6 +87,8 @@ export class BorrowService {
       throw new Error('No active borrow found for this book');
     }
 
+    const fine = this.calculateFine(borrowedBook);
+
     return prisma.$transaction(async (tx) => {
       await tx.book.update({
         where: { id: bookId },
@@ -74,7 +99,7 @@ export class BorrowService {
         },
       });
 
-      return tx.borrowedBook.update({
+      const updatedBorrow = await tx.borrowedBook.update({
         where: { id: borrowedBook.id },
         data: {
           returnedAt: new Date(),
@@ -84,6 +109,19 @@ export class BorrowService {
           user: true,
         },
       });
+
+      if (fine > 0) {
+        await tx.transaction.create({
+          data: {
+            userId,
+            borrowedBookId: borrowedBook.id,
+            amount: fine,
+            status: 'PENDING',
+          },
+        });
+      }
+
+      return updatedBorrow;
     });
   }
 
@@ -204,6 +242,10 @@ export class BorrowService {
         book: true,
       },
     });
+
+    await Promise.all(dueBorrowings.map(async (borrowing) => {
+      await sendBookDueReminderEmail(borrowing.user.email, borrowing.book.title, borrowing.dueDate);
+    }));
 
     return dueBorrowings.length;
   }

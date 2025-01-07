@@ -1,11 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { AnalyticsService } from '../services/analytics.service';
-
-const dateRangeSchema = z.object({
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-});
+import { dateRangeSchema, analyticsQuerySchema } from '../models/analytics.schema';
 
 const analyticsService = new AnalyticsService();
 
@@ -15,8 +10,8 @@ export const getMostBorrowedBooks = async (
   next: NextFunction
 ) => {
   try {
-    const { limit = 10 } = req.query;
-    const books = await analyticsService.getMostBorrowedBooks(Number(limit));
+    const validatedQuery = analyticsQuerySchema.parse(req.query);
+    const books = await analyticsService.getMostBorrowedBooks(validatedQuery.limit);
 
     res.json({
       status: 'success',

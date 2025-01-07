@@ -1,47 +1,69 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
-import { registerSchema, loginSchema, emailVerificationSchema } from '../validations/auth.schema';
+import { logger } from '../utils/logger';
 
-const authService = new AuthService();
+export class AuthController {
+  private authService: AuthService;
 
-export const register = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const validatedData = registerSchema.parse(req.body);
-    await authService.register(validatedData);
-
-    res.status(201).json({
-      status: 'success',
-      message: 'Registration successful. Please check your email for verification.',
-    });
-  } catch (error) {
-    next(error);
+  constructor() {
+    this.authService = new AuthService();
   }
-};
 
-export const login = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const validatedData = loginSchema.parse(req.body);
-    const result = await authService.login(validatedData);
+  login = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+      const result = await this.authService.login({ email, password });
+      res.json(result);
+    } catch (error: any) {
+      logger.error('Login error:', error);
+      res.status(400).json({ error: error.message });
+    }
+  };
 
-    res.json({
-      status: 'success',
-      data: result
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  register = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      const user = await this.authService.register({
+        email,
+        password,
+        firstName,
+        lastName,
+      });
+      res.status(201).json({
+        message: 'Registration successful. Please check your email to verify your account.',
+        user,
+      });
+    } catch (error: any) {
+      logger.error('Registration error:', error);
+      res.status(400).json({ error: error.message });
+    }
+  };
 
-export const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const validatedData = emailVerificationSchema.parse(req.body);
-    await authService.verifyEmail(validatedData.token);
+  verifyEmail = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== 'string') {
+        throw new Error('Verification token is required');
+      }
+      await this.authService.verifyEmail(token);
+      res.json({ message: 'Email verified successfully' });
+    } catch (error: any) {
+      logger.error('Email verification error:', error);
+      res.status(400).json({ error: error.message });
+    }
+  };
 
-    res.json({
-      status: 'success',
-      message: 'Email verified successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-}; 
+  resendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        throw new Error('Email is required');
+      }
+      await this.authService.resendVerificationEmail(email);
+      res.json({ message: 'Verification email sent successfully' });
+    } catch (error: any) {
+      logger.error('Resend verification email error:', error);
+      res.status(400).json({ error: error.message });
+    }
+  };
+} 

@@ -1,14 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { UserService } from '../services/user.service';
-
-const updateProfileSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  currentPassword: z.string().min(6).optional(),
-  newPassword: z.string().min(6).optional(),
-});
+import { updateProfileSchema } from '../models/user.schema';
 
 const userService = new UserService();
 

@@ -1,26 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { BookService } from '../services/book.service';
-import { z } from 'zod';
+import { createBookSchema, updateBookSchema, searchBooksSchema } from '../models/book.schema';
 
 const bookService = new BookService();
-
-const bookSchema = z.object({
-  isbn: z.string().min(10, 'ISBN must be at least 10 characters'),
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  totalCopies: z.number().int().positive(),
-  categoryIds: z.array(z.string()).min(1, 'At least one category is required'),
-  authorIds: z.array(z.string()).min(1, 'At least one author is required'),
-});
-
-const searchSchema = z.object({
-  query: z.string().optional(),
-  category: z.string().optional(),
-  author: z.string().optional(),
-  available: z.boolean().optional(),
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().default(10),
-});
 
 export const createBook = async (
   req: Request,
@@ -28,7 +10,7 @@ export const createBook = async (
   next: NextFunction
 ) => {
   try {
-    const validatedData = bookSchema.parse(req.body);
+    const validatedData = createBookSchema.parse(req.body);
     const book = await bookService.createBook(validatedData);
 
     res.status(201).json({
@@ -47,7 +29,7 @@ export const updateBook = async (
 ) => {
   try {
     const { id } = req.params;
-    const validatedData = bookSchema.partial().parse(req.body);
+    const validatedData = updateBookSchema.parse(req.body);
     const book = await bookService.updateBook(id, validatedData);
 
     res.json({
@@ -83,7 +65,7 @@ export const searchBooks = async (
   next: NextFunction
 ) => {
   try {
-    const validatedData = searchSchema.parse(req.query);
+    const validatedData = searchBooksSchema.parse(req.query);
     const result = await bookService.findBooks({
       search: validatedData.query,
       categoryIds: validatedData.category ? [validatedData.category] : undefined,

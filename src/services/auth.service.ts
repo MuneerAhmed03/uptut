@@ -2,6 +2,8 @@ import { prisma } from '../config/database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { User } from '.prisma/client';
+import { sendVerificationEmail } from '../utils/email';
+import crypto from 'crypto';
 
 interface LoginCredentials {
   email: string;
@@ -20,6 +22,7 @@ export class AuthService {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error('User not found');
     if (!user.isActive) throw new Error('User account is deactivated');
+    if (!user.isEmailVerified) throw new Error('Please verify your email before logging in');
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) throw new Error('Invalid password');
@@ -52,15 +55,78 @@ export class AuthService {
       },
     });
 
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); 
+
+    await prisma.emailVerificationToken.create({
+      data: {
+        token: verificationToken,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    await sendVerificationEmail(user.email, verificationToken);
+
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
-  async verifyEmail(userId: string): Promise<void> {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { isEmailVerified: true },
+  async verifyEmail(token: string): Promise<void> {
+    const verificationToken = await prisma.emailVerificationToken.findUnique({
+      where: { token },
+      include: { user: true },
     });
+
+    if (!verificationToken) {
+      throw new Error('Invalid verification token');
+    }
+
+    if (verificationToken.expiresAt < new Date()) {
+      throw new Error('Verification token has expired');
+    }
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: verificationToken.userId },
+        data: { isEmailVerified: true },
+      }),
+      prisma.emailVerificationToken.delete({
+        where: { id: verificationToken.id },
+      }),
+    ]);
+  }
+
+  async resendVerificationEmail(email: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new Error('Email is already verified');
+    }
+
+    await prisma.emailVerificationToken.deleteMany({
+      where: { userId: user.id },
+    });
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    await prisma.emailVerificationToken.create({
+      data: {
+        token: verificationToken,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    await sendVerificationEmail(user.email, verificationToken);
   }
 
   async resetPassword(userId: string, newPassword: string): Promise<void> {

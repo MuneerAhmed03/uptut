@@ -1,12 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { BorrowService } from '../services/borrow.service';
+import { borrowBookSchema, borrowQuerySchema } from '../models/borrow.schema';
 import { logger } from '../utils/logger';
-
-const borrowSchema = z.object({
-  bookId: z.string().uuid(),
-  dueDate: z.string().transform(str => new Date(str)),
-});
 
 const borrowService = new BorrowService();
 
@@ -16,13 +11,12 @@ export const borrowBook = async (
   next: NextFunction
 ) => {
   try {
-    const validatedData = borrowSchema.parse(req.body);
+    const validatedData = borrowBookSchema.parse(req.body);
     const userId = req.user!.id;
 
     const result = await borrowService.borrowBook(
       userId,
       validatedData.bookId,
-      validatedData.dueDate
     );
 
     res.status(201).json({
@@ -62,14 +56,12 @@ export const getBorrowingHistory = async (
 ) => {
   try {
     const userId = req.user!.id;
-    const status = req.query.status as 'active' | 'returned' | 'overdue' | undefined;
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
+    const validatedQuery = borrowQuerySchema.parse(req.query);
 
     const result = await borrowService.getUserBorrows(userId, {
-      status,
-      skip: (page - 1) * limit,
-      take: limit,
+      status: validatedQuery.status,
+      skip: (validatedQuery.page - 1) * validatedQuery.limit,
+      take: validatedQuery.limit,
     });
 
     res.json({
