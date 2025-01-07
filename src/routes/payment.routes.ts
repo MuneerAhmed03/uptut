@@ -12,7 +12,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/fines', getFines);
-router.post('/fines/:id/pay', payFine);
+router.post('/fines/pay', payFine);
 router.get('/history', getPaymentHistory);
 router.get('/invoice/:transactionId', generateInvoice);
 

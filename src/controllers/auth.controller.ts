@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { logger } from '../utils/logger';
+import { loginSchema, registerSchema, emailVerificationSchema, passwordResetRequestSchema, passwordResetSchema } from '../models/auth.schema';
 
 export class AuthController {
   private authService: AuthService;
@@ -11,8 +12,8 @@ export class AuthController {
 
   login = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password } = req.body;
-      const result = await this.authService.login({ email, password });
+      const validatedData = loginSchema.parse(req.body);
+      const result = await this.authService.login(validatedData.body);
       res.json(result);
     } catch (error: any) {
       logger.error('Login error:', error);
@@ -22,13 +23,8 @@ export class AuthController {
 
   register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password, firstName, lastName } = req.body;
-      const user = await this.authService.register({
-        email,
-        password,
-        firstName,
-        lastName,
-      });
+      const validatedData = registerSchema.parse(req.body);
+      const user = await this.authService.register(validatedData.body);
       res.status(201).json({
         message: 'Registration successful. Please check your email to verify your account.',
         user,
@@ -41,7 +37,8 @@ export class AuthController {
 
   verifyEmail = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { token } = req.query;
+      const validatedData = emailVerificationSchema.parse(req.query);
+      const token = validatedData.token;
       if (!token || typeof token !== 'string') {
         throw new Error('Verification token is required');
       }
@@ -55,7 +52,8 @@ export class AuthController {
 
   resendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email } = req.body;
+      const validatedData = passwordResetRequestSchema.parse(req.body);
+      const email = validatedData.email;
       if (!email) {
         throw new Error('Email is required');
       }

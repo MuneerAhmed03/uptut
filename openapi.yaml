@@ -1,25 +1,1093 @@
 openapi: 3.0.0
 info:
-  title: Library Management System API
-  description: API documentation for the Library Management System
+  title: Library Management API
   version: 1.0.0
-  contact:
-    name: Library Management System Support
+  description: API for managing library operations such as books, users, borrowing, and payments.
 servers:
-  - url: http://localhost:3000
-    description: Development server
-  - url: https://api.library.com
+  - url: https://api.library.com/v1
     description: Production server
+  - url: http://localhost:3000/api/
+    description: Local development server
+
+paths:
+  /books:
+    post:
+      summary: Add a new book to the library
+      description: Creates a new book record.
+      tags:
+        - Books
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBook'
+      responses:
+        '201':
+          description: Book created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Search books in the library
+      description: Retrieves a list of books based on search criteria.
+      tags:
+        - Books
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+          description: Search term for books.
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Category ID to filter books.
+        - in: query
+          name: author
+          schema:
+            type: string
+          description: Author ID to filter books.
+        - in: query
+          name: available
+          schema:
+            type: boolean
+          description: Whether to include only available books.
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+          description: Number of results per page.
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /books/{isbn}:
+    get:
+      summary: Get details of a specific book
+      description: Retrieves the details of a book by its ISBN.
+      tags:
+        - Books
+      parameters:
+        - in: path
+          name: isbn
+          required: true
+          schema:
+            type: string
+          description: ISBN of the book.
+      responses:
+        '200':
+          description: Book details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a book record
+      description: Updates details of an existing book by its ISBN.
+      tags:
+        - Books
+      parameters:
+        - in: path
+          name: isbn
+          required: true
+          schema:
+            type: string
+          description: ISBN of the book.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBook'
+      responses:
+        '200':
+          description: Book updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete a book record
+      description: Deletes an existing book by its ISBN.
+      tags:
+        - Books
+      parameters:
+        - in: path
+          name: isbn
+          required: true
+          schema:
+            type: string
+          description: ISBN of the book.
+      responses:
+        '200':
+          description: Book deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /borrow:
+    post:
+      summary: Borrow a book
+      description: Allows a user to borrow a book.
+      tags:
+        - Borrowing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BorrowBook'
+      responses:
+        '201':
+          description: Book borrowed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BorrowResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /history:
+    get:
+      summary: Get borrowing history
+      description: Retrieves the borrowing history for a user.
+      tags:
+        - Borrowing
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, returned, overdue]
+          description: Filter by borrowing status.
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+          description: Number of results per page.
+      responses:
+        '200':
+          description: Borrowing history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BorrowResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /borrow/{isbn}/return:
+    post:
+      tags:
+        - Borrowing
+      summary: Return a borrowed book
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: isbn
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Book returned successfully
+        '403':
+          description: Unauthorized
+        '404':
+          description: Borrowed book not found
+  /payment/fines:
+    get:
+      summary: Get user fines
+      description: Retrieves the fines for a user.
+      tags:
+        - Payments
+      responses:
+        '200':
+          description: Fines retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FineResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /payment/fines/pay:
+    post:
+      summary: Pay a fine
+      description: Allows a user to pay a fine.
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayFine'
+      responses:
+        '200':
+          description: Fine paid successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      summary: Login to an account
+      description: Authenticates a user and returns a JWT token.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUser'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/verify-email:
+    get:
+      summary: Verify user email
+      description: Verifies a user's email using a token.
+      tags:
+        - Authentication
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+          description: Verification token sent to the user's email.
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/resend-verification:
+    post:
+      summary: Resend verification email
+      description: Resends the verification email to the user.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationEmail'
+      responses:
+        '200':
+          description: Verification email resent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /analytics/most-borrowed:
+    get:
+      summary: Get most borrowed books
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          required: false
+          description: Number of books to return
+      responses:
+        '200':
+          description: Successfully retrieved most borrowed books
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Book'
+              example:
+                status: success
+                data:
+                  - id: "123e4567-e89b-12d3-a456-426614174000"
+                    title: "The Great Gatsby"
+                    isbn: "9780743273565"
+                    borrowCount: 42
+                    authors: ["F. Scott Fitzgerald"]
+                    categories: ["Fiction", "Classics"]
+
+  /analytics/monthly-report:
+    get:
+      summary: Get monthly analytics report
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+          required: false
+          description: Start date for the report
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+          required: false
+          description: End date for the report
+      responses:
+        '200':
+          description: Successfully retrieved monthly report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/MonthlyReport'
+              example:
+                status: success
+                data:
+                  period:
+                    startDate: "2024-02-15T00:00:00Z"
+                    endDate: "2024-03-15T23:59:59Z"
+                  statistics:
+                    totalBorrowings: 156
+                    totalReturns: 142
+                    newUsers: 45
+                    finesCollected: 234.50
+  /analytics/overdue-stats:
+    get:
+      summary: Get statistics about overdue books
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved overdue statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/OverdueStats'
+              example:
+                status: success
+                data:
+                  totalOverdue: 23
+                  totalFinesPending: 115.00
+                  books:
+                    - id: "123e4567-e89b-12d3-a456-426614174000"
+                      bookTitle: "The Great Gatsby"
+                      borrower:
+                        id: "98765432-e89b-12d3-a456-426614174000"
+                        name: "John Doe"
+                        email: "john@example.com"
+                      dueDate: "2024-03-01T00:00:00Z"
+                      daysOverdue: 15
+  /profile:
+    get:
+      summary: Get user profile
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                status: success
+                data:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  email: "john.doe@example.com"
+                  firstName: "John"
+                  lastName: "Doe"
+                  role: "MEMBER"
+                  isActive: true
+                  isEmailVerified: true
+                  createdAt: "2024-01-01T00:00:00Z"
+                  _count:
+                    borrowedBooks: 2
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+
+    put:
+      summary: Update user profile
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            example:
+              firstName: "John"
+              lastName: "Doe"
+              email: "john.doe@example.com"
+              currentPassword: "oldPassword123"
+              newPassword: "newPassword123"
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                status: success
+                message: Profile updated successfully
+                data:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  email: "john.doe@example.com"
+                  firstName: "John"
+                  lastName: "Doe"
+                  role: "MEMBER"
+                  isActive: true
+                  isEmailVerified: false
+                  createdAt: "2024-01-01T00:00:00Z"
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+        '409':
+          description: Email already in use
+
+  /deactivate:
+    post:
+      summary: Deactivate user account
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Account deactivated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                status: success
+                message: Account deactivated successfully
+        '400':
+          description: Cannot deactivate account with borrowed books
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+
+  /{userId}/role:
+    put:
+      summary: Update user role
+      tags:
+        - User
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRoleRequest'
+            example:
+              role: "MEMBER"
+      responses:
+        '200':
+          description: User role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+              example:
+                id: "123e4567-e89b-12d3-a456-426614174000"
+                email: "john.doe@example.com"
+                firstName: "John"
+                lastName: "Doe"
+                role: "MEMBER"
+                isActive: true
+                isEmailVerified: true
+                createdAt: "2024-01-01T00:00:00Z"
+        '401':
+          description: Unauthorized
+        '403':
+          description: Only administrators can change user roles
+        '404':
+          description: User not found
 
 components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
   schemas:
-    User:
+    CreateBook:
+      type: object
+      properties:
+        isbn:
+          type: string
+          description: Unique ISBN for the book
+          example: "9780439708180"
+        title:
+          type: string
+          description: Title of the book
+          example: "Harry Potter and the Sorcerer's Stone"
+        description:
+          type: string
+          description: Brief description of the book
+          example: "First book in the Harry Potter series"
+        totalCopies:
+          type: integer
+          description: Total copies of the book available in the library
+          example: 5
+        categoryIds:
+          type: array
+          items:
+            type: string
+          description: List of category IDs
+          example: ["1g2h3i4j"]
+        authorIds:
+          type: array
+          items:
+            type: string
+          description: List of author IDs
+          example: ["3f4g5h6i"]
+      required:
+        - isbn
+        - title
+        - totalCopies
+        - categoryIds
+        - authorIds
+    UpdateBook:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the book
+        description:
+          type: string
+          description: Description of the book
+        totalCopies:
+          type: integer
+          description: Total copies of the book available in the library
+        categoryIds:
+          type: array
+          items:
+            type: string
+          description: List of category IDs
+        authorIds:
+          type: array
+          items:
+            type: string
+          description: List of author IDs
+    BookResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the book
+          example: "1j2k3l4m"
+        isbn:
+          type: string
+          description: ISBN of the book
+          example: "9780439708180"
+        title:
+          type: string
+          description: Title of the book
+          example: "Harry Potter and the Sorcerer's Stone"
+        description:
+          type: string
+          description: Description of the book
+          example: "First book in the Harry Potter series"
+        totalCopies:
+          type: integer
+          description: Total number of copies available
+          example: 5
+        availableCopies:
+          type: integer
+          description: Number of copies currently available
+          example: 3
+    BorrowBook:
+      type: object
+      properties:
+        bookId:
+          type: string
+          description: ID of the book to borrow
+          example: "1j2k3l4m"
+      required:
+        - bookId
+    BorrowResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the borrowing record
+          example: "5b6c7d8e"
+        userId:
+          type: string
+          description: ID of the user who borrowed the book
+          example: "2a3b4c5d"
+        bookId:
+          type: string
+          description: ID of the borrowed book
+          example: "1j2k3l4m"
+        borrowedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the book was borrowed
+          example: "2025-01-01T12:00:00Z"
+        dueDate:
+          type: string
+          format: date-time
+          description: Due date for returning the book
+          example: "2025-01-15T12:00:00Z"
+    FineResponse:
+      type: object
+      properties:
+        totalFines:
+          type: number
+          format: float
+          description: Total amount of fines
+          example: 15.5
+        fines:
+          type: array
+          items:
+            type: object
+            properties:
+              transactionId:
+                type: string
+                description: ID of the fine transaction
+                example: "9a8b7c6d"
+              amount:
+                type: number
+                format: float
+                description: Amount of the fine
+                example: 5.5
+              status:
+                type: string
+                enum: [PENDING, PAID]
+                description: Status of the fine
+                example: "PENDING"
+    PayFine:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          description: ID of the transaction to pay
+          example: "9a8b7c6d"
+        paymentMethod:
+          type: string
+          enum: [CREDIT_CARD, DEBIT_CARD, CASH]
+          description: Method of payment
+          example: "CREDIT_CARD"
+      required:
+        - transactionId
+        - paymentMethod
+    PaymentResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          description: ID of the fine transaction
+          example: "9a8b7c6d"
+        amount:
+          type: number
+          format: float
+          description: Amount of the fine
+          example: 5.5
+        status:
+          type: string
+          enum: [PENDING, PAID]
+          description: Status of the fine after payment
+          example: "PAID"
+    RegisterUser:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Email address of the user
+          example: "user@example.com"
+        password:
+          type: string
+          description: Password for the account
+          example: "Password123"
+        firstName:
+          type: string
+          description: First name of the user
+          example: "John"
+        lastName:
+          type: string
+          description: Last name of the user
+          example: "Doe"
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+    LoginUser:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Email address of the user
+          example: "user@example.com"
+        password:
+          type: string
+          description: Password for the account
+          example: "Password123"
+      required:
+        - email
+        - password
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token for authenticated requests
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Unique identifier of the user
+              example: "1a2b3c4d"
+            email:
+              type: string
+              description: Email of the user
+              example: "user@example.com"
+            firstName:
+              type: string
+              description: First name of the user
+              example: "John"
+            lastName:
+              type: string
+              description: Last name of the user
+              example: "Doe"
+    ResendVerificationEmail:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Email address to resend the verification email to
+          example: "user@example.com"
+      required:
+        - email
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the operation
+          example: "success"
+        message:
+          type: string
+          description: Additional message
+          example: "Operation completed successfully."
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the error
+          example: "error"
+        message:
+          type: string
+          description: Error message
+          example: "Validation failed"
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of validation error messages
+          example: ["Invalid email", "Password is required"]
+    DateRange:
+        type: object
+        properties:
+          startDate:
+            type: string
+            format: date-time
+            description: Start date for the report (defaults to 30 days ago)
+            example: "2024-02-15T00:00:00Z"
+          endDate:
+            type: string
+            format: date-time
+            description: End date for the report (defaults to current date)
+            example: "2024-03-15T23:59:59Z"
+    AnalyticsQuery:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          default: 10
+          description: Number of records to return
+          example: 10
+    Book:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        isbn:
+          type: string
+        borrowCount:
+          type: integer
+        authors:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+
+    MonthlyReport:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            startDate:
+              type: string
+              format: date-time
+            endDate:
+              type: string
+              format: date-time
+        statistics:
+          type: object
+          properties:
+            totalBorrowings:
+              type: integer
+            totalReturns:
+              type: integer
+            newUsers:
+              type: integer
+            finesCollected:
+              type: number
+              format: float
+
+    OverdueStats:
+      type: object
+      properties:
+        totalOverdue:
+          type: integer
+        totalFinesPending:
+          type: number
+        books:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              bookTitle:
+                type: string
+              borrower:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  email:
+                    type: string
+              dueDate:
+                type: string
+                format: date-time
+              daysOverdue:
+                type: integer
+    UpdateProfileRequest:
+          type: object
+          properties:
+            firstName:
+              type: string
+              minLength: 1
+            lastName:
+              type: string
+              minLength: 1
+            email:
+              type: string
+              format: email
+            currentPassword:
+              type: string
+              minLength: 6
+            newPassword:
+              type: string
+              minLength: 6
+
+    UpdateUserRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          enum: [ADMIN, MEMBER]
+          default: MEMBER
+
+    UserProfile:
       type: object
       properties:
         id:
@@ -35,479 +1103,25 @@ components:
         role:
           type: string
           enum: [ADMIN, MEMBER]
-        isEmailVerified:
-          type: boolean
         isActive:
+          type: boolean
+        isEmailVerified:
           type: boolean
         createdAt:
           type: string
           format: date-time
+        _count:
+          type: object
+          properties:
+            borrowedBooks:
+              type: integer
 
-    Book:
+    ApiResponse:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        isbn:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        totalCopies:
-          type: integer
-        availableCopies:
-          type: integer
-        authors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Author'
-        categories:
-          type: array
-          items:
-            $ref: '#/components/schemas/Category'
-
-    Author:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        bio:
-          type: string
-
-    Category:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-
-    BorrowedBook:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        userId:
-          type: string
-          format: uuid
-        bookId:
-          type: string
-          format: uuid
-        borrowedAt:
-          type: string
-          format: date-time
-        dueDate:
-          type: string
-          format: date-time
-        returnedAt:
-          type: string
-          format: date-time
-
-    Transaction:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        userId:
-          type: string
-          format: uuid
-        borrowedBookId:
-          type: string
-          format: uuid
-        amount:
-          type: number
-          format: float
         status:
           type: string
-          enum: [PENDING, PAID, FAILED]
-
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
         message:
           type: string
-
-paths:
-  /auth/register:
-    post:
-      tags:
-        - Authentication
-      summary: Register a new user
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  format: password
-                firstName:
-                  type: string
-                lastName:
-                  type: string
-      responses:
-        '201':
-          description: User registered successfully
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/login:
-    post:
-      tags:
-        - Authentication
-      summary: Login user
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  format: password
-      responses:
-        '200':
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-        '401':
-          description: Invalid credentials
-
-  /books/search:
-    get:
-      tags:
-        - Books
-      summary: Search books
-      parameters:
-        - in: query
-          name: query
-          schema:
-            type: string
-        - in: query
-          name: page
-          schema:
-            type: integer
-        - in: query
-          name: limit
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: List of books matching the search criteria
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Book'
-                  total:
-                    type: integer
-                  page:
-                    type: integer
-                  totalPages:
-                    type: integer
-
-  /books/{id}:
-    get:
-      tags:
-        - Books
-      summary: Get book details
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Book details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Book'
-        '404':
-          description: Book not found
-
-    put:
-      tags:
-        - Books
-      summary: Update book details
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Book'
-      responses:
-        '200':
-          description: Book updated successfully
-        '403':
-          description: Unauthorized
-        '404':
-          description: Book not found
-
-    delete:
-      tags:
-        - Books
-      summary: Delete book
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Book deleted successfully
-        '403':
-          description: Unauthorized
-        '404':
-          description: Book not found
-
-  /borrow:
-    post:
-      tags:
-        - Borrowing
-      summary: Borrow a book
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                bookId:
-                  type: string
-                  format: uuid
-      responses:
-        '201':
-          description: Book borrowed successfully
-        '400':
-          description: Book not available
-        '403':
-          description: Unauthorized
-
-  /borrow/{id}/return:
-    post:
-      tags:
-        - Borrowing
-      summary: Return a borrowed book
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Book returned successfully
-        '403':
-          description: Unauthorized
-        '404':
-          description: Borrowed book not found
-
-  /borrow/history:
-    get:
-      tags:
-        - Borrowing
-      summary: Get borrowing history
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-        - in: query
-          name: limit
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: List of borrowed books
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/BorrowedBook'
-                  total:
-                    type: integer
-                  page:
-                    type: integer
-                  totalPages:
-                    type: integer
-
-  /payment/fines:
-    get:
-      tags:
-        - Payments
-      summary: Get user fines
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: List of unpaid fines
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Transaction'
-
-  /payment/fines/{id}/pay:
-    post:
-      tags:
-        - Payments
-      summary: Pay a fine
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Fine paid successfully
-        '400':
-          description: Payment failed
-        '404':
-          description: Fine not found
-
-  /analytics/most-borrowed:
-    get:
-      tags:
-        - Analytics
-      summary: Get most borrowed books
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: List of most borrowed books
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    book:
-                      $ref: '#/components/schemas/Book'
-                    borrowCount:
-                      type: integer
-
-  /analytics/monthly-report:
-    get:
-      tags:
-        - Analytics
-      summary: Get monthly borrowing report
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Monthly borrowing statistics
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  totalBorrows:
-                    type: integer
-                  totalReturns:
-                    type: integer
-                  totalFines:
-                    type: number
-                    format: float
-
-  /user/profile:
-    get:
-      tags:
-        - User
-      summary: Get user profile
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-
-    patch:
-      tags:
-        - User
-      summary: Update user profile
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                firstName:
-                  type: string
-                lastName:
-                  type: string
-      responses:
-        '200':
-          description: Profile updated successfully
-        '400':
-          description: Invalid input 
+        data:
+          type: object

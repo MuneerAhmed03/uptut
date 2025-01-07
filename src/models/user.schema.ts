@@ -18,4 +18,9 @@ export const updateProfileSchema = z.object({
   }
 );
 
+export const updateUserRoleSchema = z.object({
+  role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'),
+});
+ 
+
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>; 

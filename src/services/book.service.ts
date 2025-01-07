@@ -67,7 +67,7 @@ export class BookService {
 
   async updateBook(id: string, data: UpdateBookInput): Promise<Book> {
     const book = await prisma.book.findUnique({
-      where: { id },
+      where: { isbn : id},
       include: {
         authors: true,
         categories: true,
@@ -156,9 +156,9 @@ export class BookService {
     });
   }
 
-  async findBookById(id: string): Promise<Book | null> {
+  async findBookById(isbn: string): Promise<Book | null> {
     return prisma.book.findUnique({
-      where: { id },
+      where: { isbn },
       include: {
         authors: {
           include: {
@@ -168,14 +168,6 @@ export class BookService {
         categories: {
           include: {
             category: true,
-          },
-        },
-        borrowedBooks: {
-          where: {
-            returnedAt: null,
-          },
-          include: {
-            user: true,
           },
         },
       },

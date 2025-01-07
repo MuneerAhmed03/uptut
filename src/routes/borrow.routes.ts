@@ -11,7 +11,7 @@ const router = Router();
 router.use(authenticate);
 
 router.post('/', borrowBook);
-router.post('/:id/return', returnBook);
+router.post('/:isbn/return', returnBook);
 router.get('/history', getBorrowingHistory);
 
 export default router; 

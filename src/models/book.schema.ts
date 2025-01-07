@@ -11,6 +11,10 @@ export const createBookSchema = z.object({
 
 export const updateBookSchema = createBookSchema.partial();
 
+export const deleteBookSchema = z.object({
+  isbn: z.string().min(10, 'ISBN must be at least 10 characters'),
+});
+
 export const searchBooksSchema = z.object({
   query: z.string().optional(),
   category: z.string().optional(),

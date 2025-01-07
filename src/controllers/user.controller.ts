@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services/user.service';
-import { updateProfileSchema } from '../models/user.schema';
+import { updateProfileSchema, updateUserRoleSchema } from '../models/user.schema';
 
 const userService = new UserService();
 
@@ -59,3 +59,18 @@ export const deactivateAccount = async (
     next(error);
   }
 }; 
+
+export const updateUserRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+    const validatedData = updateUserRoleSchema.parse(req.body);
+    const updatedUser = await userService.updateUserRole(userId, validatedData.role, req.user!.id);
+    res.json(updatedUser);
+  } catch (error) {
+    next(error);
+  }
+};

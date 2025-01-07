@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { BookService } from '../services/book.service';
-import { createBookSchema, updateBookSchema, searchBooksSchema } from '../models/book.schema';
+import { createBookSchema, updateBookSchema, searchBooksSchema,deleteBookSchema } from '../models/book.schema';
 
 const bookService = new BookService();
 
@@ -47,8 +47,8 @@ export const deleteBook = async (
   next: NextFunction
 ) => {
   try {
-    const { id } = req.params;
-    await bookService.deleteBook(id);
+    const validatedData = deleteBookSchema.parse(req.params);
+    await bookService.deleteBook(validatedData.isbn);
 
     res.json({
       status: 'success',
@@ -90,8 +90,8 @@ export const getBookDetails = async (
   next: NextFunction
 ) => {
   try {
-    const { id } = req.params;
-    const book = await bookService.findBookById(id);
+    const { isbn } = req.params;
+    const book = await bookService.findBookById(isbn);
 
     if (!book) {
       return res.status(404).json({
