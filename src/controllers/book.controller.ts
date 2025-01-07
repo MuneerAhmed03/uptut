@@ -84,7 +84,14 @@ export const searchBooks = async (
 ) => {
   try {
     const validatedData = searchSchema.parse(req.query);
-    const result = await bookService.searchBooks(validatedData);
+    const result = await bookService.findBooks({
+      search: validatedData.query,
+      categoryIds: validatedData.category ? [validatedData.category] : undefined,
+      authorIds: validatedData.author ? [validatedData.author] : undefined,
+      available: validatedData.available,
+      skip: (validatedData.page - 1) * validatedData.limit,
+      take: validatedData.limit,
+    });
 
     res.json({
       status: 'success',
@@ -102,7 +109,14 @@ export const getBookDetails = async (
 ) => {
   try {
     const { id } = req.params;
-    const book = await bookService.getBookDetails(id);
+    const book = await bookService.findBookById(id);
+
+    if (!book) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Book not found',
+      });
+    }
 
     res.json({
       status: 'success',

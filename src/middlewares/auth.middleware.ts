@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '.prisma/client';
 import { AppError } from './errorHandler';
 
 const prisma = new PrismaClient();
@@ -71,46 +71,4 @@ export const authorize = (...roles: string[]) => {
 
     next();
   };
-};
-
-export const rateLimiter = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-
-  const MAX_REQUESTS = 100;
-  const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-  const ip = req.ip;
-  const now = Date.now();
-  const key = `rateLimit:${ip}`;
-
-  try {
-
-    const requests = global.rateLimitMap?.get(key) || { count: 0, resetTime: now + WINDOW_MS };
-
-    if (!global.rateLimitMap) {
-      global.rateLimitMap = new Map();
-    }
-
-    if (now > requests.resetTime) {
-      requests.count = 1;
-      requests.resetTime = now + WINDOW_MS;
-    } else if (requests.count >= MAX_REQUESTS) {
-      throw new AppError(429, 'Too many requests. Please try again later.');
-    } else {
-      requests.count++;
-    }
-
-    global.rateLimitMap.set(key, requests);
-
-    res.setHeader('X-RateLimit-Limit', MAX_REQUESTS);
-    res.setHeader('X-RateLimit-Remaining', MAX_REQUESTS - requests.count);
-    res.setHeader('X-RateLimit-Reset', requests.resetTime);
-
-    next();
-  } catch (error) {
-    next(error);
-  }
 }; 

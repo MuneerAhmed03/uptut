@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 
 const borrowSchema = z.object({
   bookId: z.string().uuid(),
+  dueDate: z.string().transform(str => new Date(str)),
 });
 
 const borrowService = new BorrowService();
@@ -18,7 +19,11 @@ export const borrowBook = async (
     const validatedData = borrowSchema.parse(req.body);
     const userId = req.user!.id;
 
-    const result = await borrowService.borrowBook(userId, validatedData.bookId);
+    const result = await borrowService.borrowBook(
+      userId,
+      validatedData.bookId,
+      validatedData.dueDate
+    );
 
     res.status(201).json({
       status: 'success',
@@ -35,25 +40,16 @@ export const returnBook = async (
   next: NextFunction
 ) => {
   try {
-    const { id } = req.params;
+    const { id: bookId } = req.params;
     const userId = req.user!.id;
 
-    const result = await borrowService.returnBook(userId, id);
+    const result = await borrowService.returnBook(userId, bookId);
 
-    const response: any = {
+    res.json({
       status: 'success',
       message: 'Book returned successfully',
-      data: {
-        borrowing: result.borrowing,
-      },
-    };
-
-    if (result.fine) {
-      response.data.fine = result.fine;
-      response.message = `Book returned successfully. A fine of $${result.fine.amount} has been charged for late return.`;
-    }
-
-    res.json(response);
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
@@ -66,13 +62,19 @@ export const getBorrowingHistory = async (
 ) => {
   try {
     const userId = req.user!.id;
-    const status = req.query.status as 'active' | 'returned' | undefined;
+    const status = req.query.status as 'active' | 'returned' | 'overdue' | undefined;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
 
-    const borrowings = await borrowService.getBorrowingHistory(userId, status);
+    const result = await borrowService.getUserBorrows(userId, {
+      status,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
 
     res.json({
       status: 'success',
-      data: borrowings,
+      data: result,
     });
   } catch (error) {
     next(error);

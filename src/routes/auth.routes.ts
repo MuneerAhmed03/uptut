@@ -1,14 +1,11 @@
 import { Router } from 'express';
 import { register, login, verifyEmail } from '../controllers/auth.controller';
-import { rateLimiter } from '../middlewares/auth.middleware';
+import { authRateLimiter } from '../middlewares/rate-limit.middleware';
 
 const router = Router();
 
-router.use(rateLimiter);
-
-
-router.post('/register', register);
-router.post('/login', login);
-router.post('/verify-email', verifyEmail);
+router.post('/register', authRateLimiter, register);
+router.post('/login', authRateLimiter, login);
+router.post('/verify-email', authRateLimiter, verifyEmail);
 
 export default router; 

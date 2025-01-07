@@ -1,34 +1,31 @@
-import prisma from '../config/database';
-import { AppError } from '../middlewares/errorHandler';
+import { prisma } from '../config/database';
+import type { Book, Prisma } from '.prisma/client';
 
-export interface CreateBookInput {
+interface CreateBookInput {
   isbn: string;
   title: string;
   description?: string;
   totalCopies: number;
-  categoryIds: string[];
   authorIds: string[];
+  categoryIds: string[];
 }
 
-export interface UpdateBookInput extends Partial<CreateBookInput> {}
-
-export interface SearchBooksInput {
-  query?: string;
-  category?: string;
-  author?: string;
-  available?: boolean;
-  page: number;
-  limit: number;
+interface UpdateBookInput {
+  title?: string;
+  description?: string;
+  totalCopies?: number;
+  authorIds?: string[];
+  categoryIds?: string[];
 }
 
 export class BookService {
-  async createBook(data: CreateBookInput) {
+  async createBook(data: CreateBookInput): Promise<Book> {
     const existingBook = await prisma.book.findUnique({
       where: { isbn: data.isbn },
     });
 
     if (existingBook) {
-      throw new AppError(409, 'Book with this ISBN already exists');
+      throw new Error('Book with this ISBN already exists');
     }
 
     return prisma.book.create({
@@ -38,84 +35,103 @@ export class BookService {
         description: data.description,
         totalCopies: data.totalCopies,
         availableCopies: data.totalCopies,
-        categories: {
-          create: data.categoryIds.map((categoryId) => ({
-            category: { connect: { id: categoryId } },
-          })),
-        },
         authors: {
           create: data.authorIds.map((authorId) => ({
-            author: { connect: { id: authorId } },
+            author: {
+              connect: { id: authorId },
+            },
+          })),
+        },
+        categories: {
+          create: data.categoryIds.map((categoryId) => ({
+            category: {
+              connect: { id: categoryId },
+            },
           })),
         },
       },
       include: {
-        categories: {
-          include: {
-            category: true,
-          },
-        },
         authors: {
           include: {
             author: true,
+          },
+        },
+        categories: {
+          include: {
+            category: true,
           },
         },
       },
     });
   }
 
-  async updateBook(id: string, data: UpdateBookInput) {
+  async updateBook(id: string, data: UpdateBookInput): Promise<Book> {
     const book = await prisma.book.findUnique({
       where: { id },
+      include: {
+        authors: true,
+        categories: true,
+      },
     });
 
     if (!book) {
-      throw new AppError(404, 'Book not found');
+      throw new Error('Book not found');
+    }
+
+    if (data.authorIds) {
+      await prisma.authorsOnBooks.deleteMany({
+        where: { bookId: id },
+      });
+    }
+    
+    if (data.categoryIds) {
+      await prisma.categoriesOnBooks.deleteMany({
+        where: { bookId: id },
+      });
     }
 
     return prisma.book.update({
       where: { id },
       data: {
-        isbn: data.isbn,
         title: data.title,
         description: data.description,
         totalCopies: data.totalCopies,
-        ...(data.totalCopies && {
-          availableCopies: data.totalCopies - (book.totalCopies - book.availableCopies),
-        }),
-        ...(data.categoryIds && {
-          categories: {
-            deleteMany: {},
-            create: data.categoryIds.map((categoryId) => ({
-              category: { connect: { id: categoryId } },
-            })),
-          },
-        }),
-        ...(data.authorIds && {
-          authors: {
-            deleteMany: {},
-            create: data.authorIds.map((authorId) => ({
-              author: { connect: { id: authorId } },
-            })),
-          },
-        }),
+        availableCopies: data.totalCopies,
+        authors: data.authorIds
+          ? {
+              create: data.authorIds.map((authorId) => ({
+                author: {
+                  connect: { id: authorId },
+                },
+              })),
+            }
+          : undefined,
+        categories: data.categoryIds
+          ? {
+              create: data.categoryIds.map((categoryId) => ({
+                category: {
+                  connect: { id: categoryId },
+                },
+              })),
+            }
+          : undefined,
       },
       include: {
-        categories: {
-          include: {
-            category: true,
-          },
-        },
         authors: {
           include: {
             author: true,
+          },
+        },
+        categories: {
+          include: {
+            category: true,
           },
         },
       },
     });
   }
 
-  async deleteBook(id: string) {
+  async deleteBook(id: string): Promise<void> {
     const book = await prisma.book.findUnique({
       where: { id },
       include: {
@@ -128,125 +144,104 @@ export class BookService {
     });
 
     if (!book) {
-      throw new AppError(404, 'Book not found');
+      throw new Error('Book not found');
     }
 
     if (book.borrowedBooks.length > 0) {
-      throw new AppError(400, 'Cannot delete book while copies are borrowed');
+      throw new Error('Cannot delete book with active borrowings');
     }
 
-    return prisma.book.update({
+    await prisma.book.delete({
       where: { id },
-      data: {
-        deletedAt: new Date(),
+    });
+  }
+
+  async findBookById(id: string): Promise<Book | null> {
+    return prisma.book.findUnique({
+      where: { id },
+      include: {
+        authors: {
+          include: {
+            author: true,
+          },
+        },
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        borrowedBooks: {
+          where: {
+            returnedAt: null,
+          },
+          include: {
+            user: true,
+          },
+        },
       },
     });
   }
 
-  async searchBooks(params: SearchBooksInput) {
-    const { query, category, author, available, page, limit } = params;
-    const skip = (page - 1) * limit;
-
-    const whereClause = {
-      deletedAt: null,
-      ...(query && {
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { isbn: { contains: query } },
-          { description: { contains: query, mode: 'insensitive' } },
-        ],
-      }),
-      ...(category && {
-        categories: {
-          some: {
-            category: {
-              name: { equals: category, mode: 'insensitive' },
+  async findBooks(params: {
+    search?: string;
+    categoryIds?: string[];
+    authorIds?: string[];
+    available?: boolean;
+    skip?: number;
+    take?: number;
+  }): Promise<{ books: Book[]; total: number }> {
+    const where: Prisma.BookWhereInput = {
+      OR: params.search
+        ? [
+            { title: { contains: params.search, mode: 'insensitive' } },
+            { isbn: { contains: params.search, mode: 'insensitive' } },
+          ]
+        : undefined,
+      categories: params.categoryIds
+        ? {
+            some: {
+              categoryId: {
+                in: params.categoryIds,
+              },
             },
-          },
-        },
-      }),
-      ...(author && {
-        authors: {
-          some: {
-            author: {
-              name: { contains: author, mode: 'insensitive' },
+          }
+        : undefined,
+      authors: params.authorIds
+        ? {
+            some: {
+              authorId: {
+                in: params.authorIds,
+              },
             },
-          },
-        },
-      }),
-      ...(available && {
-        availableCopies: { gt: 0 },
-      }),
+          }
+        : undefined,
+      availableCopies: params.available ? { gt: 0 } : undefined,
     };
 
     const [books, total] = await Promise.all([
       prisma.book.findMany({
-        where: whereClause,
+        where,
+        skip: params.skip,
+        take: params.take,
         include: {
-          categories: {
-            include: {
-              category: true,
-            },
-          },
           authors: {
             include: {
               author: true,
             },
           },
-        },
-        skip,
-        take: limit,
-      }),
-      prisma.book.count({ where: whereClause }),
-    ]);
-
-    return {
-      books,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
-
-  async getBookDetails(id: string) {
-    const book = await prisma.book.findUnique({
-      where: { id },
-      include: {
-        categories: {
-          include: {
-            category: true,
-          },
-        },
-        authors: {
-          include: {
-            author: true,
-          },
-        },
-        borrowedBooks: {
-          where: {
-            returnedAt: null,
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
+          categories: {
+            include: {
+              category: true,
             },
           },
         },
-      },
-    });
+        orderBy: {
+          title: 'asc',
+        },
+      }),
+      prisma.book.count({ where }),
+    ]);
 
-    if (!book) {
-      throw new AppError(404, 'Book not found');
-    }
-
-    return book;
+    return { books, total };
   }
 } 

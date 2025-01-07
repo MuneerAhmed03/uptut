@@ -1,11 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { PaymentService } from '../services/payment.service';
+import type { PaymentStatus } from '.prisma/client';
 
 const paymentSchema = z.object({
   transactionId: z.string().uuid(),
   paymentMethod: z.enum(['CREDIT_CARD', 'DEBIT_CARD', 'CASH']),
 });
+
+const statusSchema = z.enum(['PENDING', 'PAID', 'FAILED']).optional();
 
 const paymentService = new PaymentService();
 
@@ -59,7 +62,7 @@ export const getPaymentHistory = async (
 ) => {
   try {
     const userId = req.user!.id;
-    const status = req.query.status as string | undefined;
+    const status = statusSchema.parse(req.query.status) as PaymentStatus | undefined;
 
     const result = await paymentService.getPaymentHistory(userId, status);
 

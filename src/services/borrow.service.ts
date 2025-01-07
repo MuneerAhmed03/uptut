@@ -1,73 +1,35 @@
-import prisma from '../config/database';
-import { AppError } from '../middlewares/errorHandler';
-import { sendBookDueReminderEmail } from '../utils/email';
-
-const MAX_BORROWED_BOOKS = 3;
-const BORROW_DURATION_DAYS = 14;
-const FINE_PER_DAY = 1; 
+import { prisma } from '../config/database';
+import type { BorrowedBook, Prisma } from '.prisma/client';
 
 export class BorrowService {
-  async borrowBook(userId: string, bookId: string) {
-    const activeBorrowings = await prisma.borrowedBook.count({
-      where: {
-        userId,
-        returnedAt: null,
+  async borrowBook(userId: string, bookId: string, dueDate: Date): Promise<BorrowedBook> {
+    const book = await prisma.book.findUnique({
+      where: { id: bookId },
+      include: {
+        borrowedBooks: {
+          where: {
+            userId,
+            returnedAt: null,
+          },
+        },
       },
     });
 
-    if (activeBorrowings >= MAX_BORROWED_BOOKS) {
-      throw new AppError(400, `You cannot borrow more than ${MAX_BORROWED_BOOKS} books at a time`);
+    if (!book) {
+      throw new Error('Book not found');
     }
 
-    const unpaidFines = await prisma.transaction.findFirst({
-      where: {
-        userId,
-        status: 'PENDING',
-      },
-    });
+    if (book.availableCopies <= 0) {
+      throw new Error('No copies available for borrowing');
+    }
 
-    if (unpaidFines) {
-      throw new AppError(400, 'You have unpaid fines. Please clear them before borrowing new books');
+    if (book.borrowedBooks.length > 0) {
+      throw new Error('User already has an active borrow for this book');
     }
 
     return prisma.$transaction(async (tx) => {
-      const book = await tx.book.findUnique({
-        where: { id: bookId },
-      });
-
-      if (!book) {
-        throw new AppError(404, 'Book not found');
-      }
-
-      if (book.availableCopies <= 0) {
-        throw new AppError(400, 'No copies available for borrowing');
-      }
-
-      const existingBorrowing = await tx.borrowedBook.findFirst({
-        where: {
-          userId,
-          bookId: book.id,
-          returnedAt: null,
-        },
-      });
-
-      if (existingBorrowing) {
-        throw new AppError(400, 'You already have this book borrowed');
-      }
-
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + BORROW_DURATION_DAYS);
-
-      const borrowing = await tx.borrowedBook.create({
-        data: {
-          userId,
-          bookId: book.id,
-          dueDate,
-        },
-      });
-
       await tx.book.update({
-        where: { id: book.id },
+        where: { id: bookId },
         data: {
           availableCopies: {
             decrement: 1,
@@ -75,53 +37,36 @@ export class BorrowService {
         },
       });
 
-      return borrowing;
-    });
-  }
-
-  async returnBook(userId: string, borrowId: string) {
-    return prisma.$transaction(async (tx) => {
-      const borrowing = await tx.borrowedBook.findFirst({
-        where: {
-          id: borrowId,
+      return tx.borrowedBook.create({
+        data: {
           userId,
-          returnedAt: null,
+          bookId,
+          dueDate,
         },
         include: {
           book: true,
+          user: true,
         },
       });
+    });
+  }
 
-      if (!borrowing) {
-        throw new AppError(404, 'Borrowing record not found');
-      }
+  async returnBook(userId: string, bookId: string): Promise<BorrowedBook> {
+    const borrowedBook = await prisma.borrowedBook.findFirst({
+      where: {
+        userId,
+        bookId,
+        returnedAt: null,
+      },
+    });
 
-      const now = new Date();
-      const dueDate = new Date(borrowing.dueDate);
+    if (!borrowedBook) {
+      throw new Error('No active borrow found for this book');
+    }
 
-      let fine = null;
-      if (now > dueDate) {
-        const daysLate = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        const fineAmount = daysLate * FINE_PER_DAY;
-
-        fine = await tx.transaction.create({
-          data: {
-            userId,
-            borrowedBookId: borrowing.id,
-            amount: fineAmount,
-          },
-        });
-      }
-
-      const updatedBorrowing = await tx.borrowedBook.update({
-        where: { id: borrowing.id },
-        data: {
-          returnedAt: now,
-        },
-      });
-
+    return prisma.$transaction(async (tx) => {
       await tx.book.update({
-        where: { id: borrowing.bookId },
+        where: { id: bookId },
         data: {
           availableCopies: {
             increment: 1,
@@ -129,38 +74,116 @@ export class BorrowService {
         },
       });
 
-      return { borrowing: updatedBorrowing, fine };
+      return tx.borrowedBook.update({
+        where: { id: borrowedBook.id },
+        data: {
+          returnedAt: new Date(),
+        },
+        include: {
+          book: true,
+          user: true,
+        },
+      });
     });
   }
 
-  async getBorrowingHistory(userId: string, status?: 'active' | 'returned') {
-    const whereClause = {
+  async getUserBorrows(
+    userId: string,
+    params: {
+      status?: 'active' | 'returned' | 'overdue';
+      skip?: number;
+      take?: number;
+    }
+  ): Promise<{ borrows: BorrowedBook[]; total: number }> {
+    const where: Prisma.BorrowedBookWhereInput = {
       userId,
-      ...(status === 'active' && { returnedAt: null }),
-      ...(status === 'returned' && { returnedAt: { not: null } }),
+      ...(params.status === 'active' && {
+        returnedAt: null,
+        dueDate: {
+          gt: new Date(),
+        },
+      }),
+      ...(params.status === 'returned' && {
+        returnedAt: {
+          not: null,
+        },
+      }),
+      ...(params.status === 'overdue' && {
+        returnedAt: null,
+        dueDate: {
+          lt: new Date(),
+        },
+      }),
     };
 
-    return prisma.borrowedBook.findMany({
-      where: whereClause,
-      include: {
-        book: {
-          include: {
-            authors: {
-              include: {
-                author: true,
-              },
-            },
-          },
+    const [borrows, total] = await Promise.all([
+      prisma.borrowedBook.findMany({
+        where,
+        skip: params.skip,
+        take: params.take,
+        include: {
+          book: true,
+          user: true,
         },
-        fine: true,
-      },
-      orderBy: {
-        borrowedAt: 'desc',
-      },
-    });
+        orderBy: {
+          borrowedAt: 'desc',
+        },
+      }),
+      prisma.borrowedBook.count({ where }),
+    ]);
+
+    return { borrows, total };
   }
 
-  async sendDueReminders() {
+  async getBookBorrows(
+    bookId: string,
+    params: {
+      status?: 'active' | 'returned' | 'overdue';
+      skip?: number;
+      take?: number;
+    }
+  ): Promise<{ borrows: BorrowedBook[]; total: number }> {
+    const where: Prisma.BorrowedBookWhereInput = {
+      bookId,
+      ...(params.status === 'active' && {
+        returnedAt: null,
+        dueDate: {
+          gt: new Date(),
+        },
+      }),
+      ...(params.status === 'returned' && {
+        returnedAt: {
+          not: null,
+        },
+      }),
+      ...(params.status === 'overdue' && {
+        returnedAt: null,
+        dueDate: {
+          lt: new Date(),
+        },
+      }),
+    };
+
+    const [borrows, total] = await Promise.all([
+      prisma.borrowedBook.findMany({
+        where,
+        skip: params.skip,
+        take: params.take,
+        include: {
+          book: true,
+          user: true,
+        },
+        orderBy: {
+          borrowedAt: 'desc',
+        },
+      }),
+      prisma.borrowedBook.count({ where }),
+    ]);
+
+    return { borrows, total };
+  }
+
+  async sendDueReminders(): Promise<number> {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
@@ -181,14 +204,6 @@ export class BorrowService {
         book: true,
       },
     });
-
-    for (const borrowing of dueBorrowings) {
-      await sendBookDueReminderEmail(
-        borrowing.user.email,
-        borrowing.book.title,
-        borrowing.dueDate
-      );
-    }
 
     return dueBorrowings.length;
   }

@@ -1,45 +1,31 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/library_db?schema=public
-      - JWT_SECRET=your-jwt-secret
-      - JWT_EXPIRES_IN=1d
-      - SMTP_HOST=smtp.example.com
-      - SMTP_PORT=587
-      - SMTP_USER=your-email@example.com
-      - SMTP_PASS=your-email-password
-      - REDIS_URL=redis://redis:6379
-      - PORT=3000
-      - NODE_ENV=development
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./:/app
-      - /app/node_modules
-
-  db:
-    image: postgres:15-alpine
+  postgres:
+    image: postgres:latest
+    container_name: library_postgres
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=library_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - library_network
 
   redis:
-    image: redis:7-alpine
+    image: redis:latest
+    container_name: library_redis
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
+    networks:
+      - library_network
+
+networks:
+  library_network:
+    driver: bridge
 
 volumes:
   postgres_data:

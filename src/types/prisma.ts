@@ -1,8 +1,8 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '.prisma/client';
 
-export type PrismaTransaction = Omit<
+export type { PrismaClient };
+
+export type TransactionClient = Omit<
   PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'
->;
-
-export type { Prisma, PrismaClient }; 
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>; 

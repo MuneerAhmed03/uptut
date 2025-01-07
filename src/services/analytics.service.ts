@@ -1,15 +1,162 @@
-import prisma from '../config/database';
+import { prisma } from '../config/database';
+import type { Book, User, Category } from '.prisma/client';
+
+interface BookAnalytics {
+  id: string;
+  title: string;
+  isbn: string;
+  totalCopies: number;
+  availableCopies: number;
+  borrowCount: number;
+  authors: string[];
+  categories: string[];
+}
+
+interface UserAnalytics {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  borrowCount: number;
+}
+
+interface CategoryAnalytics {
+  name: string;
+  bookCount: number;
+  borrowCount: number;
+}
 
 export class AnalyticsService {
-  async getMostBorrowedBooks(limit: number = 10) {
+  async getBookAnalytics(): Promise<BookAnalytics[]> {
     const books = await prisma.book.findMany({
-      take: Number(limit),
       include: {
-        _count: {
-          select: {
-            borrowedBooks: true,
+        borrowedBooks: true,
+        authors: {
+          include: {
+            author: true,
           },
         },
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
+
+    return books.map((book: Book & { 
+      borrowedBooks: any[]; 
+      authors: { author: { name: string } }[];
+      categories: { category: { name: string } }[];
+    }) => ({
+      id: book.id,
+      title: book.title,
+      isbn: book.isbn,
+      totalCopies: book.totalCopies,
+      availableCopies: book.availableCopies,
+      borrowCount: book.borrowedBooks.length,
+      authors: book.authors.map((a) => a.author.name),
+      categories: book.categories.map((c) => c.category.name),
+    }));
+  }
+
+  async getDashboardStats() {
+    const [
+      totalBooks,
+      totalUsers,
+      activeUsers,
+      totalBorrows,
+      popularCategories,
+      overdueBooks,
+    ] = await Promise.all([
+      prisma.book.count(),
+      prisma.user.count(),
+      prisma.user.findMany({
+        where: {
+          borrowedBooks: {
+            some: {},
+          },
+        },
+        include: {
+          borrowedBooks: true,
+        },
+      }),
+      prisma.borrowedBook.count(),
+      prisma.category.findMany({
+        include: {
+          books: {
+            include: {
+              book: {
+                include: {
+                  borrowedBooks: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.borrowedBook.findMany({
+        where: {
+          returnedAt: null,
+          dueDate: {
+            lt: new Date(),
+          },
+        },
+        include: {
+          book: true,
+          user: true,
+        },
+      }),
+    ]);
+
+    return {
+      totalBooks,
+      totalUsers,
+      totalBorrows,
+      activeUsers: activeUsers.map((user: User & { borrowedBooks: any[] }) => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        borrowCount: user.borrowedBooks.length,
+      })),
+      popularCategories: popularCategories.map((category: Category & { 
+        books: { 
+          book: { 
+            borrowedBooks: any[] 
+          } 
+        }[] 
+      }) => ({
+        name: category.name,
+        bookCount: category.books.length,
+        borrowCount: category.books.reduce((sum, { book }) => sum + book.borrowedBooks.length, 0),
+      })),
+      overdue: {
+        count: overdueBooks.length,
+        totalFinesPending: overdueBooks.reduce((sum: number, book: any) => {
+          const daysOverdue = Math.floor(
+            (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+          );
+          return sum + daysOverdue * 1; 
+        }, 0),
+        books: overdueBooks.map((book: any) => ({
+          id: book.id,
+          bookTitle: book.book.title,
+          userName: `${book.user.firstName} ${book.user.lastName}`,
+          dueDate: book.dueDate,
+          daysOverdue: Math.floor(
+            (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+          ),
+        })),
+      },
+    };
+  }
+
+  async getMostBorrowedBooks(limit: number = 10) {
+    const books = await prisma.book.findMany({
+      take: limit,
+      include: {
+        borrowedBooks: true,
         authors: {
           include: {
             author: true,
@@ -32,7 +179,7 @@ export class AnalyticsService {
       id: book.id,
       title: book.title,
       isbn: book.isbn,
-      totalBorrows: book._count.borrowedBooks,
+      borrowCount: book.borrowedBooks.length,
       authors: book.authors.map((a) => a.author.name),
       categories: book.categories.map((c) => c.category.name),
     }));
@@ -48,7 +195,6 @@ export class AnalyticsService {
           },
         },
       }),
-
       prisma.borrowedBook.count({
         where: {
           returnedAt: {
@@ -57,7 +203,6 @@ export class AnalyticsService {
           },
         },
       }),
-
       prisma.user.count({
         where: {
           createdAt: {
@@ -66,7 +211,6 @@ export class AnalyticsService {
           },
         },
       }),
-
       prisma.transaction.aggregate({
         where: {
           status: 'PAID',
@@ -81,110 +225,28 @@ export class AnalyticsService {
       }),
     ]);
 
-    const activeUsers = await prisma.user.findMany({
-      take: 5,
-      where: {
-        borrowedBooks: {
-          some: {
-            borrowedAt: {
-              gte: startDate,
-              lte: endDate,
-            },
-          },
-        },
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        _count: {
-          select: {
-            borrowedBooks: true,
-          },
-        },
-      },
-      orderBy: {
-        borrowedBooks: {
-          _count: 'desc',
-        },
-      },
-    });
-
-    const popularCategories = await prisma.category.findMany({
-      take: 5,
-      include: {
-        _count: {
-          select: {
-            books: {
-              where: {
-                book: {
-                  borrowedBooks: {
-                    some: {
-                      borrowedAt: {
-                        gte: startDate,
-                        lte: endDate,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        books: {
-          _count: 'desc',
-        },
-      },
-    });
-
     return {
-      period: {
-        start: startDate,
-        end: endDate,
-      },
+      period: { startDate, endDate },
       statistics: {
         totalBorrowings: borrowings,
         totalReturns: returns,
         newUsers,
         finesCollected: totalFines._sum.amount || 0,
       },
-      activeUsers: activeUsers.map((user) => ({
-        id: user.id,
-        name: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        totalBorrowings: user._count.borrowedBooks,
-      })),
-      popularCategories: popularCategories.map((category) => ({
-        id: category.id,
-        name: category.name,
-        totalBorrowings: category._count.books,
-      })),
     };
   }
 
   async getOverdueStats() {
-    const now = new Date();
-
     const overdueBooks = await prisma.borrowedBook.findMany({
       where: {
         returnedAt: null,
         dueDate: {
-          lt: now,
+          lt: new Date(),
         },
       },
       include: {
         book: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
+        user: true,
       },
     });
 
@@ -192,14 +254,13 @@ export class AnalyticsService {
       totalOverdue: overdueBooks.length,
       totalFinesPending: overdueBooks.reduce((sum, book) => {
         const daysOverdue = Math.ceil(
-          (now.getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+          (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
         );
         return sum + daysOverdue;
       }, 0),
       books: overdueBooks.map((book) => ({
         id: book.id,
         bookTitle: book.book.title,
-        isbn: book.book.isbn,
         borrower: {
           id: book.user.id,
           name: `${book.user.firstName} ${book.user.lastName}`,
@@ -207,7 +268,7 @@ export class AnalyticsService {
         },
         dueDate: book.dueDate,
         daysOverdue: Math.ceil(
-          (now.getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+          (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
         ),
       })),
     };

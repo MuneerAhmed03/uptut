@@ -1,5 +1,6 @@
-import prisma from '../config/database';
+import {prisma} from '../config/database';
 import { AppError } from '../middlewares/errorHandler';
+import type { PaymentStatus } from '.prisma/client';
 
 export type PaymentMethod = 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH';
 
@@ -50,10 +51,10 @@ export class PaymentService {
     });
   }
 
-  async getPaymentHistory(userId: string, status?: string) {
+  async getPaymentHistory(userId: string, status?: PaymentStatus) {
     const whereClause = {
       userId,
-      ...(status && { status: status.toUpperCase() }),
+      ...(status && { status }),
     };
 
     const payments = await prisma.transaction.findMany({

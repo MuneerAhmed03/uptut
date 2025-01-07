@@ -13,8 +13,4 @@ declare global {
       NODE_ENV: 'development' | 'production' | 'test';
     }
   }
-
-  interface RateLimitMap extends Map<string, { count: number; resetTime: number }> {}
-
-  var rateLimitMap: RateLimitMap;
 } 
