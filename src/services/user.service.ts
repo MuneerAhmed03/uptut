@@ -1,6 +1,7 @@
 import {prisma} from '../config/database';
 import { AppError } from '../middlewares/errorHandler';
 import bcrypt from 'bcryptjs';
+import { UserRole } from '@prisma/client';
 
 interface UpdateProfileInput {
   firstName?: string;
@@ -116,6 +117,39 @@ export class UserService {
       where: { id: userId },
       data: {
         isActive: false,
+      },
+    });
+  }
+
+  async updateUserRole(userId: string, newRole: UserRole, adminId: string) {
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin || admin.role !== 'ADMIN') {
+      throw new AppError(403, 'Only administrators can change user roles');
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!targetUser) {
+      throw new AppError(404, 'User not found');
+    }
+
+    return prisma.user.update({
+      where: { id: userId },
+      data: { role: newRole },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        isEmailVerified: true,
+        createdAt: true,
       },
     });
   }
