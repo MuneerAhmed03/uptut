@@ -32,7 +32,7 @@ services:
     maxmemoryPolicy: noeviction
 
 databases:
-    name: uptut-db
+  - name: uptut-db
     databaseName: uptut-pg
     ipAllowList: []
     plan: free
