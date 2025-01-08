@@ -1,25 +1,35 @@
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
+RUN apk add --no-cache openssl
 
-# Install dependencies
+COPY package*.json ./
 RUN npm install
 
-# Copy source code
 COPY . .
 
-# Generate Prisma client
 RUN npx prisma generate
 
-# Build TypeScript
 RUN npm run build
 
-# Expose port
+FROM node:18-alpine AS production
+
+WORKDIR /app
+
+RUN apk add --no-cache openssl
+
+COPY package*.json ./
+RUN npm install --only=production
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/src/config/db/prisma ./prisma
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
 EXPOSE 3000
 
-# Start the application
 CMD ["npm", "start"] 

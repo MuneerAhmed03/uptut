@@ -42,13 +42,15 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    container_name: app
+    container_name: uptut
     ports:
       - "3000:3000"
+    env_file:
+      - .env.example
     environment:
+      - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
-      - NODE_ENV=${NODE_ENV}
       - PORT=3000
       - JWT_SECRET=${JWT_SECRET}
       - RESEND_API_KEY=${RESEND_API_KEY}
