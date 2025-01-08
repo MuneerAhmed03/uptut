@@ -33,7 +33,6 @@ services:
 
 databases:
   - name: uptut-db
-    databaseName: uptut-pg
     ipAllowList: []
     plan: free
     postgresMajorVersion: 15 
