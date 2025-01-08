@@ -3,6 +3,7 @@ services:
     name: uptut
     env: docker
     plan: free
+    region: singapore
     dockerfilePath: ./Dockerfile
     envVars:
       - key: NODE_ENV
@@ -35,4 +36,5 @@ databases:
   - name: uptut-db
     ipAllowList: []
     plan: free
+    region: singapore
     postgresMajorVersion: 15 
