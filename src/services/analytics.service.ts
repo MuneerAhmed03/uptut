@@ -1,5 +1,5 @@
-import { prisma } from '../config/db/database';
-import type { Book, User, Category } from '.prisma/client';
+import { prisma } from "../config/db/database";
+import type { Book, User, Category } from ".prisma/client";
 
 interface BookAnalytics {
   id: string;
@@ -44,20 +44,24 @@ export class AnalyticsService {
       },
     });
 
-    return books.map((book: Book & { 
-      borrowedBooks: any[]; 
-      authors: { author: { name: string } }[];
-      categories: { category: { name: string } }[];
-    }) => ({
-      id: book.id,
-      title: book.title,
-      isbn: book.isbn,
-      totalCopies: book.totalCopies,
-      availableCopies: book.availableCopies,
-      borrowCount: book.borrowedBooks.length,
-      authors: book.authors.map((a) => a.author.name),
-      categories: book.categories.map((c) => c.category.name),
-    }));
+    return books.map(
+      (
+        book: Book & {
+          borrowedBooks: any[];
+          authors: { author: { name: string } }[];
+          categories: { category: { name: string } }[];
+        },
+      ) => ({
+        id: book.id,
+        title: book.title,
+        isbn: book.isbn,
+        totalCopies: book.totalCopies,
+        availableCopies: book.availableCopies,
+        borrowCount: book.borrowedBooks.length,
+        authors: book.authors.map((a) => a.author.name),
+        categories: book.categories.map((c) => c.category.name),
+      }),
+    );
   }
 
   async getDashboardStats() {
@@ -120,24 +124,32 @@ export class AnalyticsService {
         lastName: user.lastName,
         borrowCount: user.borrowedBooks.length,
       })),
-      popularCategories: popularCategories.map((category: Category & { 
-        books: { 
-          book: { 
-            borrowedBooks: any[] 
-          } 
-        }[] 
-      }) => ({
-        name: category.name,
-        bookCount: category.books.length,
-        borrowCount: category.books.reduce((sum, { book }) => sum + book.borrowedBooks.length, 0),
-      })),
+      popularCategories: popularCategories.map(
+        (
+          category: Category & {
+            books: {
+              book: {
+                borrowedBooks: any[];
+              };
+            }[];
+          },
+        ) => ({
+          name: category.name,
+          bookCount: category.books.length,
+          borrowCount: category.books.reduce(
+            (sum, { book }) => sum + book.borrowedBooks.length,
+            0,
+          ),
+        }),
+      ),
       overdue: {
         count: overdueBooks.length,
         totalFinesPending: overdueBooks.reduce((sum: number, book: any) => {
           const daysOverdue = Math.floor(
-            (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+            (new Date().getTime() - new Date(book.dueDate).getTime()) /
+              (1000 * 60 * 60 * 24),
           );
-          return sum + daysOverdue * 1; 
+          return sum + daysOverdue * 1;
         }, 0),
         books: overdueBooks.map((book: any) => ({
           id: book.id,
@@ -145,7 +157,8 @@ export class AnalyticsService {
           userName: `${book.user.firstName} ${book.user.lastName}`,
           dueDate: book.dueDate,
           daysOverdue: Math.floor(
-            (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+            (new Date().getTime() - new Date(book.dueDate).getTime()) /
+              (1000 * 60 * 60 * 24),
           ),
         })),
       },
@@ -170,7 +183,7 @@ export class AnalyticsService {
       },
       orderBy: {
         borrowedBooks: {
-          _count: 'desc',
+          _count: "desc",
         },
       },
     });
@@ -213,7 +226,7 @@ export class AnalyticsService {
       }),
       prisma.transaction.aggregate({
         where: {
-          status: 'PAID',
+          status: "PAID",
           updatedAt: {
             gte: startDate,
             lte: endDate,
@@ -254,7 +267,8 @@ export class AnalyticsService {
       totalOverdue: overdueBooks.length,
       totalFinesPending: overdueBooks.reduce((sum, book) => {
         const daysOverdue = Math.ceil(
-          (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+          (new Date().getTime() - new Date(book.dueDate).getTime()) /
+            (1000 * 60 * 60 * 24),
         );
         return sum + daysOverdue;
       }, 0),
@@ -268,9 +282,10 @@ export class AnalyticsService {
         },
         dueDate: book.dueDate,
         daysOverdue: Math.ceil(
-          (new Date().getTime() - new Date(book.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+          (new Date().getTime() - new Date(book.dueDate).getTime()) /
+            (1000 * 60 * 60 * 24),
         ),
       })),
     };
   }
-} 
+}

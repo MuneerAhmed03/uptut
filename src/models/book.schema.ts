@@ -1,18 +1,18 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const createBookSchema = z.object({
-  isbn: z.string().min(10, 'ISBN must be at least 10 characters'),
-  title: z.string().min(1, 'Title is required'),
+  isbn: z.string().min(10, "ISBN must be at least 10 characters"),
+  title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   totalCopies: z.number().int().positive(),
-  categoryIds: z.array(z.string()).min(1, 'At least one category is required'),
-  authorIds: z.array(z.string()).min(1, 'At least one author is required'),
+  categoryIds: z.array(z.string()).min(1, "At least one category is required"),
+  authorIds: z.array(z.string()).min(1, "At least one author is required"),
 });
 
 export const updateBookSchema = createBookSchema.partial();
 
 export const deleteBookSchema = z.object({
-  isbn: z.string().min(10, 'ISBN must be at least 10 characters'),
+  isbn: z.string().min(10, "ISBN must be at least 10 characters"),
 });
 
 export const searchBooksSchema = z.object({
@@ -26,4 +26,4 @@ export const searchBooksSchema = z.object({
 
 export type CreateBookInput = z.infer<typeof createBookSchema>;
 export type UpdateBookInput = z.infer<typeof updateBookSchema>;
-export type SearchBooksParams = z.infer<typeof searchBooksSchema>; 
+export type SearchBooksParams = z.infer<typeof searchBooksSchema>;

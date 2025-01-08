@@ -1,6 +1,6 @@
-import { prisma } from '../config/db/database';
-import type { BorrowedBook, Prisma } from '.prisma/client';
-import { sendBookDueReminderEmail } from '../utils/email';
+import { prisma } from "../config/db/database";
+import type { BorrowedBook, Prisma } from ".prisma/client";
+import { sendBookDueReminderEmail } from "../utils/email";
 
 export class BorrowService {
   private BORROW_DURATION_DAYS = 14;
@@ -20,15 +20,15 @@ export class BorrowService {
     });
 
     if (!book) {
-      throw new Error('Book not found');
+      throw new Error("Book not found");
     }
 
     if (book.availableCopies <= 0) {
-      throw new Error('No copies available for borrowing');
+      throw new Error("No copies available for borrowing");
     }
 
     if (book.borrowedBooks.length > 0) {
-      throw new Error('User already has an active borrow for this book');
+      throw new Error("User already has an active borrow for this book");
     }
 
     const dueDate = new Date();
@@ -70,7 +70,9 @@ export class BorrowService {
       return 0;
     }
 
-    const overdueDays = Math.floor((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const overdueDays = Math.floor(
+      (currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
     return overdueDays * this.FINE_RATE_PER_DAY;
   }
 
@@ -84,7 +86,7 @@ export class BorrowService {
     });
 
     if (!borrowedBook) {
-      throw new Error('No active borrow found for this book');
+      throw new Error("No active borrow found for this book");
     }
 
     const fine = this.calculateFine(borrowedBook);
@@ -116,7 +118,7 @@ export class BorrowService {
             userId,
             borrowedBookId: borrowedBook.id,
             amount: fine,
-            status: 'PENDING',
+            status: "PENDING",
           },
         });
       }
@@ -128,25 +130,25 @@ export class BorrowService {
   async getUserBorrows(
     userId: string,
     params: {
-      status?: 'active' | 'returned' | 'overdue';
+      status?: "active" | "returned" | "overdue";
       skip?: number;
       take?: number;
-    }
+    },
   ): Promise<{ borrows: BorrowedBook[]; total: number }> {
     const where: Prisma.BorrowedBookWhereInput = {
       userId,
-      ...(params.status === 'active' && {
+      ...(params.status === "active" && {
         returnedAt: null,
         dueDate: {
           gt: new Date(),
         },
       }),
-      ...(params.status === 'returned' && {
+      ...(params.status === "returned" && {
         returnedAt: {
           not: null,
         },
       }),
-      ...(params.status === 'overdue' && {
+      ...(params.status === "overdue" && {
         returnedAt: null,
         dueDate: {
           lt: new Date(),
@@ -164,7 +166,7 @@ export class BorrowService {
           user: true,
         },
         orderBy: {
-          borrowedAt: 'desc',
+          borrowedAt: "desc",
         },
       }),
       prisma.borrowedBook.count({ where }),
@@ -176,25 +178,25 @@ export class BorrowService {
   async getBookBorrows(
     bookId: string,
     params: {
-      status?: 'active' | 'returned' | 'overdue';
+      status?: "active" | "returned" | "overdue";
       skip?: number;
       take?: number;
-    }
+    },
   ): Promise<{ borrows: BorrowedBook[]; total: number }> {
     const where: Prisma.BorrowedBookWhereInput = {
       bookId,
-      ...(params.status === 'active' && {
+      ...(params.status === "active" && {
         returnedAt: null,
         dueDate: {
           gt: new Date(),
         },
       }),
-      ...(params.status === 'returned' && {
+      ...(params.status === "returned" && {
         returnedAt: {
           not: null,
         },
       }),
-      ...(params.status === 'overdue' && {
+      ...(params.status === "overdue" && {
         returnedAt: null,
         dueDate: {
           lt: new Date(),
@@ -212,7 +214,7 @@ export class BorrowService {
           user: true,
         },
         orderBy: {
-          borrowedAt: 'desc',
+          borrowedAt: "desc",
         },
       }),
       prisma.borrowedBook.count({ where }),
@@ -243,10 +245,16 @@ export class BorrowService {
       },
     });
 
-    await Promise.all(dueBorrowings.map(async (borrowing) => {
-      await sendBookDueReminderEmail(borrowing.user.email, borrowing.book.title, borrowing.dueDate);
-    }));
+    await Promise.all(
+      dueBorrowings.map(async (borrowing) => {
+        await sendBookDueReminderEmail(
+          borrowing.user.email,
+          borrowing.book.title,
+          borrowing.dueDate,
+        );
+      }),
+    );
 
     return dueBorrowings.length;
   }
-} 
+}

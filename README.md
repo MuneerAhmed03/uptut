@@ -2,6 +2,8 @@
 
 A robust backend system for managing a library's books, users, and borrowing activities.
 
+Swagger Docs: https://uptut.onrender.com/docs/
+
 ## Features
 
 - User Authentication with JWT
@@ -45,57 +47,169 @@ A robust backend system for managing a library's books, users, and borrowing act
 ## Setup and Running
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd library-management-system
 ```
 
 2. Copy the example environment file:
+
 ```bash
 cp .env.example .env
 ```
 
 3. Start the application using Docker:
+
 ```bash
 docker-compose up -d
 ```
 
-4. Run database migrations:
-```bash
-docker-compose exec app npx prisma migrate deploy
-```
-
 The application will be available at `http://localhost:3000`.
 
-## API Documentation
+# Detailed System Design for Library Management System
 
-### Authentication APIs
-- POST /api/auth/register - Register a new user
-- POST /api/auth/login - Login user
-- POST /api/auth/verify-email - Verify email
+## Overview
 
-### Book Management APIs
-- GET /api/books/search - Search books
-- GET /api/books/:id - Get book details
-- POST /api/books - Add new book (Admin)
-- PUT /api/books/:id - Update book (Admin)
-- DELETE /api/books/:id - Delete book (Admin)
+This section outlines the design of a Library Management System (LMS) that supports essential library functions such as user management, book cataloging, borrowing, payments, and analytics. The system is modular, scalable, and follows modern software design principles.
 
-### Borrowing APIs
-- POST /api/borrow - Borrow a book
-- POST /api/borrow/:id/return - Return a book
-- GET /api/borrow/history - Get borrowing history
+---
 
-### Payment APIs
-- GET /api/payments/fines - Get user fines
-- POST /api/payments/fines/:id/pay - Pay a fine
-- GET /api/payments/history - Get payment history
-- GET /api/payments/invoice/:id - Generate invoice
+## Architecture
 
-### Analytics APIs (Admin only)
-- GET /api/analytics/most-borrowed - Get most borrowed books
-- GET /api/analytics/monthly-report - Get monthly usage report
-- GET /api/analytics/overdue-stats - Get overdue statistics
+### System Components
+
+1. **Frontend**: User interface to interact with the system (e.g., web application).
+2. **Backend**: RESTful API to handle business logic and data management.
+3. **Database**: Persistent storage for structured data using PostgreSQL.
+4. **Cache**: Redis for caching frequently accessed data.
+5. **Authentication**: JWT-based authentication for secure user sessions.
+
+### Tech Stack
+
+- **Programming Language**: TypeScript
+- **Framework**: Express.js
+- **Database ORM**: Prisma
+- **Cache**: Redis
+- **Containerization**: Docker
+
+---
+
+## Database Design
+
+### Entities
+
+1. **User**
+
+2. **Book**
+
+3. **Author**
+
+4. **Category**
+
+5. **BorrowedBook**
+
+6. **Transaction**
+
+### Relationships
+
+- **AuthorsOnBooks**: Many-to-many relationship between `Author` and `Book`.
+- **CategoriesOnBooks**: Many-to-many relationship between `Category` and `Book`.
+- **Foreign Keys**:
+  - `BorrowedBook.userId` references `User.id`
+  - `BorrowedBook.bookId` references `Book.id`
+  - `Transaction.userId` references `User.id`
+  - `Transaction.borrowedBookId` references `BorrowedBook.id`
+
+---
+
+## API Design
+
+### Authentication
+
+1. **Register** (`POST /auth/register`): Registers a new user.
+2. **Login** (`POST /auth/login`): Authenticates a user.
+3. **Email Verification** (`GET /auth/verify-email`): Verifies user email.
+
+### Book Management
+
+1. **Search Books** (`GET /books/search`): Searches books with filters.
+2. **Get Book Details** (`GET /books/:isbn`): Retrieves book details.
+3. **Create Book** (`POST /books`): Adds a new book (Admin only).
+4. **Update Book** (`PUT /books/:isbn`): Updates book details (Admin only).
+5. **Delete Book** (`DELETE /books/:isbn`): Deletes a book (Admin only).
+
+### Borrowing
+
+1. **Borrow Book** (`POST /borrow`): Borrows a book.
+2. **Return Book** (`POST /borrow/:isbn/return`): Returns a borrowed book.
+3. **Borrowing History** (`GET /borrow/history`): Retrieves borrowing history.
+
+### Payments
+
+1. **Get Fines** (`GET /payment/fines`): Retrieves outstanding fines.
+2. **Pay Fine** (`POST /payment/fines/pay`): Pays a fine.
+3. **Payment History** (`GET /payment/history`): Fetches payment history.
+
+### Analytics (Admin Only)
+
+1. **Most Borrowed Books** (`GET /analytics/most-borrowed`)
+2. **Monthly Report** (`GET /analytics/monthly-report`)
+3. **Overdue Stats** (`GET /analytics/overdue-stats`)
+
+---
+
+## Middleware Design
+
+1. **Authentication Middleware**: Ensures the user is authenticated.
+2. **Authorization Middleware**: Checks user roles for resource access.
+3. **Cache Middleware**: Reduces load on the database for read-heavy endpoints.
+4. **Rate Limiting Middleware**: Controls API usage to prevent abuse.
+5. **Error Handling Middleware**: Standardized error handling across APIs.
+6. **Validation Middleware**: Validates incoming request payloads.
+
+---
+
+## Key Features
+
+### Caching
+
+- **Why**: Improves performance by reducing database calls.
+- **Implementation**: Redis is used to store query results for frequently accessed endpoints.
+
+### Scalability
+
+- Designed with modularity to allow for scaling both horizontally and vertically.
+- Utilizes Docker for environment standardization and easy deployment.
+
+### Security
+
+1. **Authentication**: Implements JWT for secure user sessions.
+2. **Encryption**: Uses bcrypt for password hashing.
+3. **Role-based Access Control**: Restricts access to resources based on roles.
+
+### Monitoring
+
+- **Request Logging**: Logs request details for debugging and analytics.
+- **Error Logging**: Captures errors in a structured format.
+
+---
+
+## Deployment
+
+### Environment Variables
+
+- `DATABASE_URL`: Database connection string.
+- `REDIS_URL`: Redis connection string.
+- `JWT_SECRET`: Secret key for JWT.
+
+### Steps
+
+1. **Build**: Use Docker to create images.
+2. **Deploy**: Push to a container orchestration platform (e.g., Kubernetes).
+3. **Seed Data**: Use provided scripts to seed the database.
+
+---
 
 ## Development
 
@@ -114,4 +228,4 @@ npm test
 
 ## License
 
-ISC 
+ISC

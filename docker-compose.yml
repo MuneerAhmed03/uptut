@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -39,7 +39,7 @@ services:
     command: redis-server --appendonly yes
 
   uptut:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: uptut
@@ -60,7 +60,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks: 
+    networks:
       - library_network
     restart: unless-stopped
 
@@ -70,4 +70,4 @@ networks:
 
 volumes:
   postgres_data:
-  redis_data: 
+  redis_data:

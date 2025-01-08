@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API for managing library operations such as books, users, borrowing, and payments.
 servers:
-  - url: https://api.library.com/v1
+  - url: https://uptut.onrender.com/api/
     description: Production server
   - url: http://localhost:3000/api/
     description: Local development server
@@ -21,20 +21,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateBook'
+              $ref: "#/components/schemas/CreateBook"
       responses:
-        '201':
+        "201":
           description: Book created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookResponse'
-        '400':
+                $ref: "#/components/schemas/BookResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       summary: Search books in the library
       description: Retrieves a list of books based on search criteria.
@@ -76,20 +76,20 @@ paths:
             minimum: 1
           description: Number of results per page.
       responses:
-        '200':
+        "200":
           description: List of books
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/BookResponse'
-        '400':
+                  $ref: "#/components/schemas/BookResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /books/{isbn}:
     get:
       summary: Get details of a specific book
@@ -104,18 +104,18 @@ paths:
             type: string
           description: ISBN of the book.
       responses:
-        '200':
+        "200":
           description: Book details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookResponse'
-        '404':
+                $ref: "#/components/schemas/BookResponse"
+        "404":
           description: Book not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     put:
       summary: Update a book record
       description: Updates details of an existing book by its ISBN.
@@ -133,26 +133,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateBook'
+              $ref: "#/components/schemas/UpdateBook"
       responses:
-        '200':
+        "200":
           description: Book updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BookResponse'
-        '400':
+                $ref: "#/components/schemas/BookResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Book not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       summary: Delete a book record
       description: Deletes an existing book by its ISBN.
@@ -166,18 +166,18 @@ paths:
             type: string
           description: ISBN of the book.
       responses:
-        '200':
+        "200":
           description: Book deleted successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '404':
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
           description: Book not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /borrow:
     post:
       summary: Borrow a book
@@ -189,20 +189,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BorrowBook'
+              $ref: "#/components/schemas/BorrowBook"
       responses:
-        '201':
+        "201":
           description: Book borrowed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BorrowResponse'
-        '400':
+                $ref: "#/components/schemas/BorrowResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /history:
     get:
       summary: Get borrowing history
@@ -231,20 +231,20 @@ paths:
             minimum: 1
           description: Number of results per page.
       responses:
-        '200':
+        "200":
           description: Borrowing history retrieved successfully
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/BorrowResponse'
-        '400':
+                  $ref: "#/components/schemas/BorrowResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /borrow/{isbn}/return:
     post:
       tags:
@@ -260,11 +260,11 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Book returned successfully
-        '403':
+        "403":
           description: Unauthorized
-        '404':
+        "404":
           description: Borrowed book not found
   /payment/fines:
     get:
@@ -273,18 +273,18 @@ paths:
       tags:
         - Payments
       responses:
-        '200':
+        "200":
           description: Fines retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FineResponse'
-        '400':
+                $ref: "#/components/schemas/FineResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /payment/fines/pay:
     post:
       summary: Pay a fine
@@ -296,20 +296,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PayFine'
+              $ref: "#/components/schemas/PayFine"
       responses:
-        '200':
+        "200":
           description: Fine paid successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaymentResponse'
-        '400':
+                $ref: "#/components/schemas/PaymentResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /auth/register:
     post:
       summary: Register a new user
@@ -321,20 +321,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterUser'
+              $ref: "#/components/schemas/RegisterUser"
       responses:
-        '201':
+        "201":
           description: Registration successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /auth/login:
     post:
       summary: Login to an account
@@ -346,20 +346,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginUser'
+              $ref: "#/components/schemas/LoginUser"
       responses:
-        '200':
+        "200":
           description: Login successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /auth/verify-email:
     get:
       summary: Verify user email
@@ -374,18 +374,18 @@ paths:
             type: string
           description: Verification token sent to the user's email.
       responses:
-        '200':
+        "200":
           description: Email verified successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
           description: Invalid or expired token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /auth/resend-verification:
     post:
       summary: Resend verification email
@@ -397,20 +397,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResendVerificationEmail'
+              $ref: "#/components/schemas/ResendVerificationEmail"
       responses:
-        '200':
+        "200":
           description: Verification email resent successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
           description: Validation error
           content:
-            application/json: 
+            application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /analytics/most-borrowed:
     get:
       summary: Get most borrowed books
@@ -428,7 +428,7 @@ paths:
           required: false
           description: Number of books to return
       responses:
-        '200':
+        "200":
           description: Successfully retrieved most borrowed books
           content:
             application/json:
@@ -441,7 +441,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Book'
+                      $ref: "#/components/schemas/Book"
               example:
                 status: success
                 data:
@@ -475,7 +475,7 @@ paths:
           required: false
           description: End date for the report
       responses:
-        '200':
+        "200":
           description: Successfully retrieved monthly report
           content:
             application/json:
@@ -486,7 +486,7 @@ paths:
                     type: string
                     example: success
                   data:
-                    $ref: '#/components/schemas/MonthlyReport'
+                    $ref: "#/components/schemas/MonthlyReport"
               example:
                 status: success
                 data:
@@ -506,7 +506,7 @@ paths:
       security:
         - BearerAuth: []
       responses:
-        '200':
+        "200":
           description: Successfully retrieved overdue statistics
           content:
             application/json:
@@ -517,7 +517,7 @@ paths:
                     type: string
                     example: success
                   data:
-                    $ref: '#/components/schemas/OverdueStats'
+                    $ref: "#/components/schemas/OverdueStats"
               example:
                 status: success
                 data:
@@ -540,12 +540,12 @@ paths:
       security:
         - BearerAuth: []
       responses:
-        '200':
+        "200":
           description: User profile retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: "#/components/schemas/ApiResponse"
               example:
                 status: success
                 data:
@@ -559,9 +559,9 @@ paths:
                   createdAt: "2024-01-01T00:00:00Z"
                   _count:
                     borrowedBooks: 2
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: User not found
 
     put:
@@ -575,7 +575,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateProfileRequest'
+              $ref: "#/components/schemas/UpdateProfileRequest"
             example:
               firstName: "John"
               lastName: "Doe"
@@ -583,12 +583,12 @@ paths:
               currentPassword: "oldPassword123"
               newPassword: "newPassword123"
       responses:
-        '200':
+        "200":
           description: Profile updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: "#/components/schemas/ApiResponse"
               example:
                 status: success
                 message: Profile updated successfully
@@ -601,11 +601,11 @@ paths:
                   isActive: true
                   isEmailVerified: false
                   createdAt: "2024-01-01T00:00:00Z"
-        '400':
+        "400":
           description: Validation error
-        '401':
+        "401":
           description: Unauthorized
-        '409':
+        "409":
           description: Email already in use
 
   /deactivate:
@@ -616,20 +616,20 @@ paths:
       security:
         - BearerAuth: []
       responses:
-        '200':
+        "200":
           description: Account deactivated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                $ref: "#/components/schemas/ApiResponse"
               example:
                 status: success
                 message: Account deactivated successfully
-        '400':
+        "400":
           description: Cannot deactivate account with borrowed books
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: User not found
 
   /{userId}/role:
@@ -651,16 +651,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateUserRoleRequest'
+              $ref: "#/components/schemas/UpdateUserRoleRequest"
             example:
               role: "MEMBER"
       responses:
-        '200':
+        "200":
           description: User role updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfile'
+                $ref: "#/components/schemas/UserProfile"
               example:
                 id: "123e4567-e89b-12d3-a456-426614174000"
                 email: "john.doe@example.com"
@@ -670,11 +670,11 @@ paths:
                 isActive: true
                 isEmailVerified: true
                 createdAt: "2024-01-01T00:00:00Z"
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Only administrators can change user roles
-        '404':
+        "404":
           description: User not found
 
 components:
@@ -960,18 +960,18 @@ components:
           description: List of validation error messages
           example: ["Invalid email", "Password is required"]
     DateRange:
-        type: object
-        properties:
-          startDate:
-            type: string
-            format: date-time
-            description: Start date for the report (defaults to 30 days ago)
-            example: "2024-02-15T00:00:00Z"
-          endDate:
-            type: string
-            format: date-time
-            description: End date for the report (defaults to current date)
-            example: "2024-03-15T23:59:59Z"
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date-time
+          description: Start date for the report (defaults to 30 days ago)
+          example: "2024-02-15T00:00:00Z"
+        endDate:
+          type: string
+          format: date-time
+          description: End date for the report (defaults to current date)
+          example: "2024-03-15T23:59:59Z"
     AnalyticsQuery:
       type: object
       properties:
@@ -1059,23 +1059,23 @@ components:
               daysOverdue:
                 type: integer
     UpdateProfileRequest:
-          type: object
-          properties:
-            firstName:
-              type: string
-              minLength: 1
-            lastName:
-              type: string
-              minLength: 1
-            email:
-              type: string
-              format: email
-            currentPassword:
-              type: string
-              minLength: 6
-            newPassword:
-              type: string
-              minLength: 6
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        currentPassword:
+          type: string
+          minLength: 6
+        newPassword:
+          type: string
+          minLength: 6
 
     UpdateUserRoleRequest:
       type: object

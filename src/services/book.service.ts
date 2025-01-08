@@ -1,5 +1,5 @@
-import { prisma } from '../config/db/database';
-import type { Book, Prisma } from '.prisma/client';
+import { prisma } from "../config/db/database";
+import type { Book, Prisma } from ".prisma/client";
 
 interface CreateBookInput {
   isbn: string;
@@ -25,7 +25,7 @@ export class BookService {
     });
 
     if (existingBook) {
-      throw new Error('Book with this ISBN already exists');
+      throw new Error("Book with this ISBN already exists");
     }
 
     return prisma.book.create({
@@ -67,7 +67,7 @@ export class BookService {
 
   async updateBook(id: string, data: UpdateBookInput): Promise<Book> {
     const book = await prisma.book.findUnique({
-      where: { isbn : id},
+      where: { isbn: id },
       include: {
         authors: true,
         categories: true,
@@ -75,7 +75,7 @@ export class BookService {
     });
 
     if (!book) {
-      throw new Error('Book not found');
+      throw new Error("Book not found");
     }
 
     if (data.authorIds) {
@@ -83,7 +83,7 @@ export class BookService {
         where: { bookId: id },
       });
     }
-    
+
     if (data.categoryIds) {
       await prisma.categoriesOnBooks.deleteMany({
         where: { bookId: id },
@@ -144,11 +144,11 @@ export class BookService {
     });
 
     if (!book) {
-      throw new Error('Book not found');
+      throw new Error("Book not found");
     }
 
     if (book.borrowedBooks.length > 0) {
-      throw new Error('Cannot delete book with active borrowings');
+      throw new Error("Cannot delete book with active borrowings");
     }
 
     await prisma.book.delete({
@@ -156,7 +156,7 @@ export class BookService {
     });
   }
 
-  async findBookById(isbn: string){
+  async findBookById(isbn: string) {
     return prisma.book.findUnique({
       where: { isbn },
       include: {
@@ -166,7 +166,7 @@ export class BookService {
               select: {
                 id: true,
                 name: true,
-                bio: true, 
+                bio: true,
               },
             },
           },
@@ -196,8 +196,8 @@ export class BookService {
     const where: Prisma.BookWhereInput = {
       OR: params.search
         ? [
-            { title: { contains: params.search, mode: 'insensitive' } },
-            { isbn: { contains: params.search, mode: 'insensitive' } },
+            { title: { contains: params.search, mode: "insensitive" } },
+            { isbn: { contains: params.search, mode: "insensitive" } },
           ]
         : undefined,
       categories: params.categoryIds
@@ -220,7 +220,7 @@ export class BookService {
         : undefined,
       availableCopies: params.available ? { gt: 0 } : undefined,
     };
-  
+
     const [books, total] = await Promise.all([
       prisma.book.findMany({
         where,
@@ -236,7 +236,7 @@ export class BookService {
               author: {
                 select: {
                   id: true,
-                  name: true, 
+                  name: true,
                 },
               },
             },
@@ -245,34 +245,33 @@ export class BookService {
             select: {
               category: {
                 select: {
-                  id: true, 
-                  name: true, 
+                  id: true,
+                  name: true,
                 },
               },
             },
           },
         },
         orderBy: {
-          title: 'asc',
+          title: "asc",
         },
       }),
       prisma.book.count({ where }),
     ]);
-  
+
     return {
       books: books.map((book) => ({
         ...book,
         authors: book.authors.map((a) => ({
           id: a.author.id,
           name: a.author.name,
-        })), 
+        })),
         categories: book.categories.map((c) => ({
           id: c.category.id,
           name: c.category.name,
-        })), 
+        })),
       })),
       total,
     };
   }
-  
-} 
+}

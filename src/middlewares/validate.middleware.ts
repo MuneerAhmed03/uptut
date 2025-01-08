@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { AnyZodObject } from 'zod';
-import { logger } from '../utils/logger';
+import { Request, Response, NextFunction } from "express";
+import { AnyZodObject } from "zod";
+import { logger } from "../utils/logger";
 
 export const validateRequest = (schema: AnyZodObject) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -12,11 +12,11 @@ export const validateRequest = (schema: AnyZodObject) => {
       });
       next();
     } catch (error: any) {
-      logger.error('Validation error:', error);
+      logger.error("Validation error:", error);
       res.status(400).json({
-        error: 'Validation failed',
+        error: "Validation failed",
         details: error.errors,
       });
     }
   };
-}; 
+};

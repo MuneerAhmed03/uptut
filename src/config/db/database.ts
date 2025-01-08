@@ -1,4 +1,4 @@
-import { PrismaClient } from '.prisma/client';
+import { PrismaClient } from ".prisma/client";
 
 declare global {
   var prisma: PrismaClient | undefined;
@@ -9,11 +9,13 @@ class Database {
   private _prisma: PrismaClient;
 
   private constructor() {
-    this._prisma = globalThis.prisma || new PrismaClient({
-      log: ['query', 'error', 'warn'],
-    });
+    this._prisma =
+      globalThis.prisma ||
+      new PrismaClient({
+        log: ["query", "error", "warn"],
+      });
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       globalThis.prisma = this._prisma;
     }
   }
@@ -32,18 +34,18 @@ class Database {
   async connect(): Promise<void> {
     try {
       await this._prisma.$connect();
-      console.log('📦 Database connected successfully');
+      console.log("📦 Database connected successfully");
     } catch (error) {
-      console.error('Database connection error:', error);
+      console.error("Database connection error:", error);
       process.exit(1);
     }
   }
 
   async disconnect(): Promise<void> {
     await this._prisma.$disconnect();
-    console.log('📦 Database disconnected successfully');
+    console.log("📦 Database disconnected successfully");
   }
 }
 
 export const db = Database.getInstance();
-export const prisma = db.prisma; 
+export const prisma = db.prisma;

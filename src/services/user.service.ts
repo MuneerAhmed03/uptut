@@ -1,7 +1,7 @@
-import {prisma} from '../config/db/database';
-import { AppError } from '../middlewares/errorHandler.middleware';
-import bcrypt from 'bcryptjs';
-import { UserRole } from '@prisma/client';
+import { prisma } from "../config/db/database";
+import { AppError } from "../middlewares/errorHandler.middleware";
+import bcrypt from "bcryptjs";
+import { UserRole } from "@prisma/client";
 
 interface UpdateProfileInput {
   firstName?: string;
@@ -33,7 +33,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new AppError(404, 'User not found');
+      throw new AppError(404, "User not found");
     }
 
     return user;
@@ -45,17 +45,23 @@ export class UserService {
     });
 
     if (!user) {
-      throw new AppError(404, 'User not found');
+      throw new AppError(404, "User not found");
     }
 
     if (data.newPassword) {
       if (!data.currentPassword) {
-        throw new AppError(400, 'Current password is required to set new password');
+        throw new AppError(
+          400,
+          "Current password is required to set new password",
+        );
       }
 
-      const isPasswordValid = await bcrypt.compare(data.currentPassword, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        data.currentPassword,
+        user.password,
+      );
       if (!isPasswordValid) {
-        throw new AppError(401, 'Current password is incorrect');
+        throw new AppError(401, "Current password is incorrect");
       }
 
       data.newPassword = await bcrypt.hash(data.newPassword, 10);
@@ -67,7 +73,7 @@ export class UserService {
       });
 
       if (existingUser) {
-        throw new AppError(409, 'Email already in use');
+        throw new AppError(409, "Email already in use");
       }
     }
 
@@ -78,7 +84,7 @@ export class UserService {
         lastName: data.lastName,
         email: data.email,
         ...(data.newPassword && { password: data.newPassword }),
-        ...(data.email && { isEmailVerified: false }), 
+        ...(data.email && { isEmailVerified: false }),
       },
       select: {
         id: true,
@@ -106,11 +112,14 @@ export class UserService {
     });
 
     if (!user) {
-      throw new AppError(404, 'User not found');
+      throw new AppError(404, "User not found");
     }
 
     if (user.borrowedBooks.length > 0) {
-      throw new AppError(400, 'Cannot deactivate account while having borrowed books');
+      throw new AppError(
+        400,
+        "Cannot deactivate account while having borrowed books",
+      );
     }
 
     return prisma.user.update({
@@ -126,8 +135,8 @@ export class UserService {
       where: { id: adminId },
     });
 
-    if (!admin || admin.role !== 'ADMIN') {
-      throw new AppError(403, 'Only administrators can change user roles');
+    if (!admin || admin.role !== "ADMIN") {
+      throw new AppError(403, "Only administrators can change user roles");
     }
 
     const targetUser = await prisma.user.findUnique({
@@ -135,7 +144,7 @@ export class UserService {
     });
 
     if (!targetUser) {
-      throw new AppError(404, 'User not found');
+      throw new AppError(404, "User not found");
     }
 
     return prisma.user.update({
@@ -153,4 +162,4 @@ export class UserService {
       },
     });
   }
-} 
+}

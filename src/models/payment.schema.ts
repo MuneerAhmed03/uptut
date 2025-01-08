@@ -1,7 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-export const paymentMethodSchema = z.enum(['CREDIT_CARD', 'DEBIT_CARD', 'CASH']);
-export const paymentStatusSchema = z.enum(['PENDING', 'PAID', 'FAILED']);
+export const paymentMethodSchema = z.enum([
+  "CREDIT_CARD",
+  "DEBIT_CARD",
+  "CASH",
+]);
+export const paymentStatusSchema = z.enum(["PENDING", "PAID", "FAILED"]);
 
 export const payFineSchema = z.object({
   transactionId: z.string().uuid(),
@@ -17,4 +21,4 @@ export const paymentQuerySchema = z.object({
 export type PayFineInput = z.infer<typeof payFineSchema>;
 export type PaymentQueryParams = z.infer<typeof paymentQuerySchema>;
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
-export type PaymentStatus = z.infer<typeof paymentStatusSchema>; 
+export type PaymentStatus = z.infer<typeof paymentStatusSchema>;

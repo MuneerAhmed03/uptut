@@ -1,9 +1,9 @@
-import { prisma } from '../config/db/database';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import type { User } from '.prisma/client';
-import { sendVerificationEmail } from '../utils/email';
-import crypto from 'crypto';
+import { prisma } from "../config/db/database";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import type { User } from ".prisma/client";
+import { sendVerificationEmail } from "../utils/email";
+import crypto from "crypto";
 
 interface LoginCredentials {
   email: string;
@@ -18,32 +18,39 @@ interface RegisterData {
 }
 
 export class AuthService {
-  async login({ email, password }: LoginCredentials): Promise<{ token: string; user: Omit<User, 'password'> }> {
+  async login({
+    email,
+    password,
+  }: LoginCredentials): Promise<{
+    token: string;
+    user: Omit<User, "password">;
+  }> {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) throw new Error('User not found');
-    if (!user.isActive) throw new Error('User account is deactivated');
-    if (!user.isEmailVerified) throw new Error('Please verify your email before logging in');
+    if (!user) throw new Error("User not found");
+    if (!user.isActive) throw new Error("User account is deactivated");
+    if (!user.isEmailVerified)
+      throw new Error("Please verify your email before logging in");
 
     const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) throw new Error('Invalid password');
+    if (!isValidPassword) throw new Error("Invalid password");
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'your-jwt-secret-key',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+      process.env.JWT_SECRET || "your-jwt-secret-key",
+      { expiresIn: process.env.JWT_EXPIRES_IN || "1d" },
     );
 
     const { password: _, ...userWithoutPassword } = user;
     return { token, user: userWithoutPassword };
   }
 
-  async register(data: RegisterData): Promise<Omit<User, 'password'>> {
+  async register(data: RegisterData): Promise<Omit<User, "password">> {
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email },
     });
 
     if (existingUser) {
-      throw new Error('Email already registered');
+      throw new Error("Email already registered");
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -55,9 +62,9 @@ export class AuthService {
       },
     });
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24); 
+    expiresAt.setHours(expiresAt.getHours() + 24);
 
     await prisma.emailVerificationToken.create({
       data: {
@@ -80,11 +87,11 @@ export class AuthService {
     });
 
     if (!verificationToken) {
-      throw new Error('Invalid verification token');
+      throw new Error("Invalid verification token");
     }
 
     if (verificationToken.expiresAt < new Date()) {
-      throw new Error('Verification token has expired');
+      throw new Error("Verification token has expired");
     }
     await prisma.$transaction([
       prisma.user.update({
@@ -103,18 +110,18 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     if (user.isEmailVerified) {
-      throw new Error('Email is already verified');
+      throw new Error("Email is already verified");
     }
 
     await prisma.emailVerificationToken.deleteMany({
       where: { userId: user.id },
     });
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -136,4 +143,4 @@ export class AuthService {
       data: { password: hashedPassword },
     });
   }
-} 
+}

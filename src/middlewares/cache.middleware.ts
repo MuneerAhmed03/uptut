@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
-import redisClient from '../config/redis';
-import { logger } from '../utils/logger';
+import { Request, Response, NextFunction } from "express";
+import redisClient from "../config/redis";
+import { logger } from "../utils/logger";
 
 export const cacheMiddleware = (ttl: number) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (req.method !== 'GET') {
+    if (req.method !== "GET") {
       return next();
     }
 
@@ -17,17 +17,18 @@ export const cacheMiddleware = (ttl: number) => {
       }
 
       const originalJson = res.json.bind(res);
-      
+
       res.json = ((data: any) => {
-        redisClient.setEx(key, ttl, JSON.stringify(data))
-          .catch(err => logger.error('Redis cache error:', err));
+        redisClient
+          .setEx(key, ttl, JSON.stringify(data))
+          .catch((err) => logger.error("Redis cache error:", err));
         return originalJson(data);
       }) as any;
 
       next();
     } catch (error) {
-      logger.error('Cache middleware error:', error);
+      logger.error("Cache middleware error:", error);
       next();
     }
   };
-}; 
+};

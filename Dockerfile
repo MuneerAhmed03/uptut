@@ -28,7 +28,6 @@ RUN npm install --only=production
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/src/config/db/prisma ./prisma
 COPY --from=builder /app/openapi.yaml ./
 COPY src/config/db/prisma/ ./dist/config/db/prisma
 

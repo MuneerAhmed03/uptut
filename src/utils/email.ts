@@ -1,16 +1,13 @@
-
-import { logger } from './logger';
+import { logger } from "./logger";
 import { Resend } from "resend";
 
-const RESEND_API_KEY=process.env.RESEND_API_KEY
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 const resend = new Resend(RESEND_API_KEY);
-
 
 export const sendVerificationEmail = async (to: string, token: string) => {
   try {
     const verificationLink = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
-
 
     const { data, error } = await resend.emails.send({
       from: "Acme <onboarding@resend.dev>",
@@ -27,12 +24,12 @@ export const sendVerificationEmail = async (to: string, token: string) => {
     });
     if (error) {
       logger.error(`Error from resend API: ${error}`);
-      throw new Error('Failed to send verification email');
+      throw new Error("Failed to send verification email");
     }
     logger.info(`Verification email sent to ${to}`);
   } catch (error) {
-    logger.error('Error sending verification email:', error);
-    throw new Error('Failed to send verification email');
+    logger.error("Error sending verification email:", error);
+    throw new Error("Failed to send verification email");
   }
 };
 
@@ -43,8 +40,8 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
     const { data, error } = await resend.emails.send({
       from: "Acme <onboarding@resend.dev>",
       to,
-      subject: 'Password Reset - Library Management System',
-      html:  `
+      subject: "Password Reset - Library Management System",
+      html: `
       <h1>Password Reset Request</h1>
       <p>You have requested to reset your password.</p>
       <p>Please click the link below to reset your password:</p>
@@ -55,23 +52,26 @@ export const sendPasswordResetEmail = async (to: string, token: string) => {
     });
     if (error) {
       logger.error(`Error from resend API: ${error}`);
-      throw new Error('Failed to send verification email');
+      throw new Error("Failed to send verification email");
     }
     logger.info(`Password reset email sent to ${to}`);
   } catch (error) {
-    logger.error('Error sending password reset email:', error);
-    throw new Error('Failed to send password reset email');
+    logger.error("Error sending password reset email:", error);
+    throw new Error("Failed to send password reset email");
   }
 };
 
-export const sendBookDueReminderEmail = async (to: string, bookTitle: string, dueDate: Date) => {
+export const sendBookDueReminderEmail = async (
+  to: string,
+  bookTitle: string,
+  dueDate: Date,
+) => {
   try {
-    
     const { data, error } = await resend.emails.send({
       from: "Acme <onboarding@resend.dev>",
       to,
-      subject: 'Book Due Reminder - Library Management System',
-      html:   `
+      subject: "Book Due Reminder - Library Management System",
+      html: `
       <h1>Book Due Reminder</h1>
       <p>This is a reminder that your book "${bookTitle}" is due on ${dueDate.toLocaleDateString()}.</p>
       <p>Please return the book to avoid any late fees.</p>
@@ -80,12 +80,12 @@ export const sendBookDueReminderEmail = async (to: string, bookTitle: string, du
     });
     if (error) {
       logger.error(`Error from resend API: ${error}`);
-      throw new Error('Failed to send verification email');
+      throw new Error("Failed to send verification email");
     }
-    
+
     logger.info(`Book due reminder email sent to ${to}`);
   } catch (error) {
-    logger.error('Error sending book due reminder email:', error);
-    throw new Error('Failed to send book due reminder email');
+    logger.error("Error sending book due reminder email:", error);
+    throw new Error("Failed to send book due reminder email");
   }
-}; 
+};

@@ -1,15 +1,15 @@
-import {prisma} from '../config/db/database';
-import { AppError } from '../middlewares/errorHandler.middleware';
-import type { PaymentStatus } from '.prisma/client';
+import { prisma } from "../config/db/database";
+import { AppError } from "../middlewares/errorHandler.middleware";
+import type { PaymentStatus } from ".prisma/client";
 
-export type PaymentMethod = 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH';
+export type PaymentMethod = "CREDIT_CARD" | "DEBIT_CARD" | "CASH";
 
 export class PaymentService {
   async getFines(userId: string) {
     const fines = await prisma.transaction.findMany({
       where: {
         userId,
-        status: 'PENDING',
+        status: "PENDING",
       },
       include: {
         borrowedBook: {
@@ -25,24 +25,28 @@ export class PaymentService {
     return { fines, total };
   }
 
-  async payFine(userId: string, transactionId: string, paymentMethod: PaymentMethod) {
+  async payFine(
+    userId: string,
+    transactionId: string,
+    paymentMethod: PaymentMethod,
+  ) {
     return prisma.$transaction(async (tx) => {
       const fine = await tx.transaction.findFirst({
         where: {
           id: transactionId,
           userId,
-          status: 'PENDING',
+          status: "PENDING",
         },
       });
 
       if (!fine) {
-        throw new AppError(404, 'Fine not found or already paid');
+        throw new AppError(404, "Fine not found or already paid");
       }
 
       const updatedFine = await tx.transaction.update({
         where: { id: fine.id },
         data: {
-          status: 'PAID',
+          status: "PAID",
           updatedAt: new Date(),
         },
       });
@@ -67,7 +71,7 @@ export class PaymentService {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
@@ -99,7 +103,7 @@ export class PaymentService {
     });
 
     if (!transaction) {
-      throw new AppError(404, 'Transaction not found');
+      throw new AppError(404, "Transaction not found");
     }
 
     return {
@@ -120,7 +124,7 @@ export class PaymentService {
         returnedAt: transaction.borrowedBook.returnedAt,
       },
       amount: transaction.amount,
-      currency: 'USD',
+      currency: "USD",
     };
   }
-} 
+}
