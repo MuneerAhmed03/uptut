@@ -2,19 +2,22 @@
   "name": "library-management-system",
   "version": "1.0.0",
   "main": "dist/index.js",
-  "scripts": {
-    "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
-    "build": "tsc",
-    "test": "jest",
-    "lint": "eslint . --ext .ts",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "db:seed": "ts-node src/config/db/prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force",
-    "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run db:seed",
-    "studio": "prisma studio"
-  },
+
+      "scripts": {
+        "start": "npm run db:setup && node dist/index.js",
+        "dev": "nodemon src/index.ts",
+        "build": "tsc",
+        "test": "jest",
+        "lint": "eslint . --ext .ts",
+        "prisma:generate": "npx prisma generate --schema=src/config/db/prisma/schema.prisma", 
+        "prisma:migrate": "npx prisma migrate dev --schema=src/config/db/prisma/schema.prisma", 
+        "prisma:generate-prod": "npx prisma generate --schema=dist/config/db/prisma/schema.prisma",  
+        "prisma:migrate-prod": "npx prisma migrate deploy --schema=dist/config/db/prisma/schema.prisma",  
+        "db:seed": "node dist/config/db/prisma/seed.js",
+        "db:reset": "npx prisma migrate reset --force --schema=src/config/db/prisma/schema.prisma",  
+        "db:setup": "npm run prisma:migrate-prod && npm run prisma:generate-prod && npm run db:seed",
+        "studio": "npx prisma studio --schema=src/config/db/prisma/schema.prisma"  
+    },
   "keywords": [
     "library",
     "management",
@@ -33,12 +36,13 @@
     "form-data": "^4.0.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mailgun.js": "^10.4.0",
-    "nodemailer": "^6.9.7",
     "redis": "^4.6.11",
     "resend": "^4.0.1",
+    "swagger-ui-express": "^5.0.1",
     "winston": "^3.11.0",
-    "zod": "^3.24.1"
+    "yamljs": "^0.3.0",
+    "zod": "^3.24.1",
+    "prisma": "^5.7.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -48,6 +52,8 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.10.6",
     "@types/nodemailer": "^6.4.14",
+    "@types/swagger-ui-express": "^4.1.7",
+    "@types/yamljs": "^0.2.34",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "@typescript-eslint/parser": "^6.17.0",
     "eslint": "^8.56.0",
@@ -59,7 +65,7 @@
     "typescript": "^5.3.3"
   },
   "prisma": {
-    "schema":"src/config/db/prisma/schema.prisma",
+    "schema": "${PRISMA_SCHEMA:-src/config/db/prisma/schema.prisma}",
     "seed": "ts-node src/config/db/prisma/seed.ts"
   }
 }

@@ -46,11 +46,11 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env.example
+      - .env
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=${REDIS_URL}
       - PORT=3000
       - JWT_SECRET=${JWT_SECRET}
       - RESEND_API_KEY=${RESEND_API_KEY}

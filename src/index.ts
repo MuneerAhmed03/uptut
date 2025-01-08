@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
 import { db } from './config/db/database';
 import { apiRateLimiter } from './middlewares/rate-limit.middleware';
 import redisClient from './config/redis';
@@ -13,6 +16,8 @@ import userRoutes from './routes/user.routes';
 import borrowRoutes from './routes/borrow.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import paymentRoutes from './routes/payment.routes';
+
+const swaggerDocument = YAML.load(path.join(__dirname, '../openapi.yaml'));
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -28,6 +33,9 @@ app.use('/api', apiRateLimiter);
 app.get('/', (req,res) => {
     res.send('healthy');
 });
+
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
     
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);

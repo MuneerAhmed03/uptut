@@ -8,9 +8,12 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+COPY openapi.yaml ./
 
-RUN npx prisma generate
 
+COPY src/config/db/prisma/schema.prisma ./src/config/db/prisma/schema.prisma
+
+RUN npx prisma generate --schema=src/config/db/prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-alpine AS production
@@ -26,10 +29,13 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/src/config/db/prisma ./prisma
+COPY --from=builder /app/openapi.yaml ./
+COPY src/config/db/prisma/ ./dist/config/db/prisma
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["npm", "start"] 
+CMD [ "npm" ,"start"]
+
