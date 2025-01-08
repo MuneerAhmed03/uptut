@@ -2,9 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import redisClient from '../config/redis';
 import { logger } from '../utils/logger';
 
-const DEFAULT_EXPIRATION = 3600; // 1 hour
-
-export const cacheMiddleware = (duration: number = DEFAULT_EXPIRATION) => {
+export const cacheMiddleware = (ttl: number) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== 'GET') {
       return next();
@@ -13,15 +11,15 @@ export const cacheMiddleware = (duration: number = DEFAULT_EXPIRATION) => {
     const key = `cache:${req.originalUrl}`;
 
     try {
-      const cachedData = await redisClient.get(key);
-      
-      if (cachedData) {
-        return res.json(JSON.parse(cachedData));
+      const data = await redisClient.get(key);
+      if (data) {
+        return res.json(JSON.parse(data));
       }
 
       const originalJson = res.json.bind(res);
+      
       res.json = ((data: any) => {
-        redisClient.setEx(key, duration, JSON.stringify(data))
+        redisClient.setEx(key, ttl, JSON.stringify(data))
           .catch(err => logger.error('Redis cache error:', err));
         return originalJson(data);
       }) as any;

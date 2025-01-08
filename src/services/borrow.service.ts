@@ -4,7 +4,7 @@ import { sendBookDueReminderEmail } from '../utils/email';
 
 export class BorrowService {
   private BORROW_DURATION_DAYS = 14;
-  private FINE_RATE_PER_DAY = 1.0; // $1 per day
+  private FINE_RATE_PER_DAY = 1.0;
 
   async borrowBook(userId: string, bookId: string): Promise<BorrowedBook> {
     const book = await prisma.book.findUnique({

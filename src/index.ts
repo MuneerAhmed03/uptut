@@ -5,6 +5,7 @@ import { db } from './config/db/database';
 import { apiRateLimiter } from './middlewares/rate-limit.middleware';
 import redisClient from './config/redis';
 import { requestLogger } from './middlewares/request-logger.middleware';
+import { errorHandler } from './middlewares/errorHandler.middleware';
 
 import authRoutes from './routes/auth.routes';
 import bookRoutes from './routes/book.routes';
@@ -21,14 +22,12 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.use(requestLogger);
-
 app.use('/api', apiRateLimiter);
 
-app.get('/', (req,res) =>{
-    res.send('healthy')
-})
+app.get('/', (req,res) => {
+    res.send('healthy');
+});
     
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
@@ -37,21 +36,7 @@ app.use('/api/borrows', borrowRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
 
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (err.name === 'ZodError') {
-    return res.status(400).json({
-      status: 'error',
-      message: 'Validation failed',
-      errors: JSON.parse((err as any).message)
-    });
-  }
-  next(err);
-});
-
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
+app.use(errorHandler);
 
 const startServer = async () => {
   try {
@@ -66,7 +51,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
 
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received. Shutting down gracefully...');

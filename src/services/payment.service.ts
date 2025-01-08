@@ -1,5 +1,5 @@
 import {prisma} from '../config/db/database';
-import { AppError } from '../middlewares/errorHandler';
+import { AppError } from '../middlewares/errorHandler.middleware';
 import type { PaymentStatus } from '.prisma/client';
 
 export type PaymentMethod = 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH';

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '.prisma/client';
-import { AppError } from './errorHandler';
+import { AppError } from './errorHandler.middleware';
 
 const prisma = new PrismaClient();
 
