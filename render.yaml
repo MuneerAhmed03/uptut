@@ -31,8 +31,9 @@ services:
     plan: free
     maxmemoryPolicy: noeviction
 
-  - type: postgres
+databases:
     name: uptut-db
+    databaseName: uptut-pg
     ipAllowList: []
     plan: free
     postgresMajorVersion: 15 
