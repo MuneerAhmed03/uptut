@@ -9,7 +9,7 @@ const resend = new Resend(RESEND_API_KEY);
 
 export const sendVerificationEmail = async (to: string, token: string) => {
   try {
-    const verificationLink = `${process.env.APP_URL}/verify-email?token=${token}`;
+    const verificationLink = `${process.env.APP_URL}/auth/verify-email?token=${token}`;
 
 
     const { data, error } = await resend.emails.send({

@@ -156,18 +156,29 @@ export class BookService {
     });
   }
 
-  async findBookById(isbn: string): Promise<Book | null> {
+  async findBookById(isbn: string){
     return prisma.book.findUnique({
       where: { isbn },
       include: {
         authors: {
           include: {
-            author: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+                bio: true, 
+              },
+            },
           },
         },
         categories: {
           include: {
-            category: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -181,7 +192,7 @@ export class BookService {
     available?: boolean;
     skip?: number;
     take?: number;
-  }): Promise<{ books: Book[]; total: number }> {
+  }): Promise<{ books: Partial<Book>[]; total: number }> {
     const where: Prisma.BookWhereInput = {
       OR: params.search
         ? [
@@ -209,21 +220,35 @@ export class BookService {
         : undefined,
       availableCopies: params.available ? { gt: 0 } : undefined,
     };
-
+  
     const [books, total] = await Promise.all([
       prisma.book.findMany({
         where,
         skip: params.skip,
         take: params.take,
-        include: {
+        select: {
+          isbn: true,
+          title: true,
+          description: true,
+          availableCopies: true,
           authors: {
-            include: {
-              author: true,
+            select: {
+              author: {
+                select: {
+                  id: true,
+                  name: true, 
+                },
+              },
             },
           },
           categories: {
-            include: {
-              category: true,
+            select: {
+              category: {
+                select: {
+                  id: true, 
+                  name: true, 
+                },
+              },
             },
           },
         },
@@ -233,7 +258,21 @@ export class BookService {
       }),
       prisma.book.count({ where }),
     ]);
-
-    return { books, total };
+  
+    return {
+      books: books.map((book) => ({
+        ...book,
+        authors: book.authors.map((a) => ({
+          id: a.author.id,
+          name: a.author.name,
+        })), 
+        categories: book.categories.map((c) => ({
+          id: c.category.id,
+          name: c.category.name,
+        })), 
+      })),
+      total,
+    };
   }
+  
 } 

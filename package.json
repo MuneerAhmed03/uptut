@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed": "ts-node src/config/db/prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
     "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run db:seed",
     "studio": "prisma studio"
@@ -59,6 +59,7 @@
     "typescript": "^5.3.3"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "schema":"src/config/db/prisma/schema.prisma",
+    "seed": "ts-node src/config/db/prisma/seed.ts"
   }
 }
