@@ -117,6 +117,13 @@ paths:
       description: Creates a new book record.
       tags:
         - Books
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       security:
         - BearerAuth: []
       requestBody:
@@ -234,6 +241,12 @@ paths:
           schema:
             type: string
           description: ISBN of the book.
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       requestBody:
         required: true
         content:
@@ -273,6 +286,12 @@ paths:
           schema:
             type: string
           description: ISBN of the book.
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Book deleted successfully
@@ -294,6 +313,13 @@ paths:
         - Borrowing
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       requestBody:
         required: true
         content:
@@ -342,6 +368,12 @@ paths:
             default: 10
             minimum: 1
           description: Number of results per page.
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Borrowing history retrieved successfully
@@ -371,6 +403,12 @@ paths:
           schema:
             type: string
             format: uuid
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Book returned successfully
@@ -386,6 +424,13 @@ paths:
         - Payments
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Fines retrieved successfully
@@ -407,6 +452,13 @@ paths:
         - Payments
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       requestBody:
         required: true
         content:
@@ -441,6 +493,12 @@ paths:
           schema:
             type: string
             description: ID of the payment transaction to generate the invoice for.
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Invoice generated successfully
@@ -479,6 +537,12 @@ paths:
             type: integer
             default: 10
           description: Number of results per page.
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Payment history retrieved successfully
@@ -504,6 +568,12 @@ paths:
             minimum: 1
             default: 10
           description: Number of books to retrieve.
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Most borrowed books retrieved successfully
@@ -535,6 +605,12 @@ paths:
             format: date-time
           required: false
           description: End date for the report
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Successfully retrieved monthly report
@@ -566,6 +642,13 @@ paths:
         - Analytics
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Successfully retrieved overdue statistics
@@ -600,6 +683,13 @@ paths:
         - User
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: User profile retrieved successfully
@@ -631,6 +721,13 @@ paths:
         - User
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       requestBody:
         required: true
         content:
@@ -675,6 +772,13 @@ paths:
         - User
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       responses:
         "200":
           description: Account deactivated successfully
@@ -698,6 +802,13 @@ paths:
         - User
       security:
         - BearerAuth: []
+      parameters:
+        - in: header
+          name:  Auth
+          required: true
+          schema:
+            type: string
+          description: Bearer Auth Token.
       parameters:
         - name: userId
           in: path
