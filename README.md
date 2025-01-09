@@ -28,14 +28,13 @@ Swagger Docs: https://uptut.onrender.com/docs/
 
 ```
 /src
-  /config        # Configuration files
+  /config        # Prisma & Redis Configuration files
   /controllers   # Request handlers
   /middlewares   # Express middlewares
   /models        # Database models (Prisma schema)
   /routes        # API routes
   /services      # Business logic
   /utils         # Utility functions
-/prisma          # Prisma schema and migrations
 ```
 
 ## Prerequisites
@@ -46,11 +45,13 @@ Swagger Docs: https://uptut.onrender.com/docs/
 
 ## Setup and Running
 
+
+
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
-cd library-management-system
+git clone https://github.com/MuneerAhmed03/uptut.git
+cd uptut
 ```
 
 2. Copy the example environment file:
@@ -58,12 +59,26 @@ cd library-management-system
 ```bash
 cp .env.example .env
 ```
+### Using Docker
 
 3. Start the application using Docker:
 
 ```bash
-docker-compose up -d
+docker-compose up
 ```
+### Without Docker
+
+## Development
+
+To run the application in development mode:
+
+```bash
+npm install
+npm run db:setup
+npm run dev
+```
+
+
 
 The application will be available at `http://localhost:3000`.
 
@@ -202,6 +217,7 @@ This section outlines the design of a Library Management System (LMS) that suppo
 - `DATABASE_URL`: Database connection string.
 - `REDIS_URL`: Redis connection string.
 - `JWT_SECRET`: Secret key for JWT.
+- `RESEND_API_KEY`: Resend Api Key for emails.
 
 ### Steps
 
@@ -210,22 +226,3 @@ This section outlines the design of a Library Management System (LMS) that suppo
 3. **Seed Data**: Use provided scripts to seed the database.
 
 ---
-
-## Development
-
-To run the application in development mode:
-
-```bash
-npm install
-npm run dev
-```
-
-## Testing
-
-```bash
-npm test
-```
-
-## License
-
-ISC

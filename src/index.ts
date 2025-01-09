@@ -38,8 +38,8 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/borrows", borrowRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/borrow", borrowRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/payments", paymentRoutes);
 
@@ -51,7 +51,7 @@ const startServer = async () => {
     await redisClient.connect();
 
     app.listen(port, () => {
-      console.log(`🚀 Server is running on port ${port}`);
+      console.log(` Server is running on port ${port}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
