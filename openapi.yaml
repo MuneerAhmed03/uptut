@@ -118,7 +118,7 @@ paths:
       tags:
         - Books
       security:
-        - BearerAuth: []      
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -222,11 +222,11 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
     put:
       summary: Update a book record [ADMIN ONLY]
-      description: Updates details of an existing book by its ISBN. 
+      description: Updates details of an existing book by its ISBN.
       tags:
         - Books
       security:
-        - BearerAuth: [] 
+        - BearerAuth: []
       parameters:
         - in: path
           name: isbn
@@ -261,11 +261,11 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
     delete:
       summary: Delete a book record  [ADMIN ONLY]
-      description: Deletes an existing book by its ISBN. 
+      description: Deletes an existing book by its ISBN.
       tags:
         - Books
       security:
-        - BearerAuth: [] 
+        - BearerAuth: []
       parameters:
         - in: path
           name: isbn
@@ -293,7 +293,7 @@ paths:
       tags:
         - Borrowing
       security:
-        - BearerAuth: [] 
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -320,7 +320,7 @@ paths:
       tags:
         - Borrowing
       security:
-        - BearerAuth: [] 
+        - BearerAuth: []
       parameters:
         - in: query
           name: status
@@ -385,7 +385,7 @@ paths:
       tags:
         - Payments
       security:
-        - BearerAuth: [] 
+        - BearerAuth: []
       responses:
         "200":
           description: Fines retrieved successfully
@@ -406,7 +406,7 @@ paths:
       tags:
         - Payments
       security:
-        - BearerAuth: [] 
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -426,49 +426,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-   /analytics/most-borrowed:
-    get:
-      summary: Get most borrowed books
-      tags:
-        - Analytics
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            minimum: 1
-            default: 10
-          required: false
-          description: Number of books to return
-      responses:
-        "200":
-          description: Successfully retrieved most borrowed books
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Book"
-              example:
-                status: success
-                data:
-                  - id: "123e4567-e89b-12d3-a456-426614174000"
-                    title: "The Great Gatsby"
-                    isbn: "9780743273565"
-                    borrowCount: 42
-                    authors: ["F. Scott Fitzgerald"]
-                    categories: ["Fiction", "Classics"]
   /payments/invoice:
     get:
-      summary: Generate payment invoice 
+      summary: Generate payment invoice
       description: Generates an invoice for a specific payment transaction.
       tags:
         - Payments
@@ -1224,8 +1184,117 @@ components:
           type: string
         data:
           type: object
+
+    InvoiceResponse:
+      type: object
+      properties:
+        invoiceNumber:
+          type: string
+        date:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [PENDING, PAID]
+        customer:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+        book:
+          type: object
+          properties:
+            title:
+              type: string
+            isbn:
+              type: string
+        amount:
+          type: number
+        currency:
+          type: string
+      example:
+        invoiceNumber: "INV-12345678"
+        date: "2025-01-08T10:00:00Z"
+        status: "PAID"
+        customer:
+          name: "Jane Doe"
+          email: "jane.doe@example.com"
+        book:
+          title: "1984"
+          isbn: "9780451524935"
+        amount: 10.0
+        currency: "USD"
+
+    PaymentHistoryResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            type: object
+            properties:
+              transactionId:
+                type: string
+              status:
+                type: string
+                enum: [PENDING, PAID, FAILED]
+              amount:
+                type: number
+              createdAt:
+                type: string
+                format: date-time
+        total:
+          type: number
+        page:
+          type: integer
+        limit:
+          type: integer
+      example:
+        payments:
+          - transactionId: "123e4567-e89b-12d3-a456-426614174001"
+            status: "PAID"
+            amount: 15.0
+            createdAt: "2025-01-01T12:00:00Z"
+        total: 45.0
+        page: 1
+        limit: 10
+
+    MostBorrowedBooksResponse:
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              isbn:
+                type: string
+              borrowCount:
+                type: integer
+              authors:
+                type: array
+                items:
+                  type: string
+              categories:
+                type: array
+                items:
+                  type: string
+      example:
+        books:
+          - id: "123e4567-e89b-12d3-a456-426614174000"
+            title: "The Great Gatsby"
+            isbn: "9780743273565"
+            borrowCount: 42
+            authors: ["F. Scott Fitzgerald"]
+            categories: ["Fiction", "Classics"]
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT 
+      bearerFormat: JWT

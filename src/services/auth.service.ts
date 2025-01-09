@@ -18,10 +18,7 @@ interface RegisterData {
 }
 
 export class AuthService {
-  async login({
-    email,
-    password,
-  }: LoginCredentials): Promise<{
+  async login({ email, password }: LoginCredentials): Promise<{
     token: string;
     user: Omit<User, "password">;
   }> {

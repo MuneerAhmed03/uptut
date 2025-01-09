@@ -45,8 +45,6 @@ Swagger Docs: https://uptut.onrender.com/docs/
 
 ## Setup and Running
 
-
-
 1. Clone the repository:
 
 ```bash
@@ -59,6 +57,7 @@ cd uptut
 ```bash
 cp .env.example .env
 ```
+
 ### Using Docker
 
 3. Start the application using Docker:
@@ -66,6 +65,7 @@ cp .env.example .env
 ```bash
 docker-compose up
 ```
+
 ### Without Docker
 
 ## Development
@@ -77,8 +77,6 @@ npm install
 npm run db:setup
 npm run dev
 ```
-
-
 
 The application will be available at `http://localhost:3000`.
 
