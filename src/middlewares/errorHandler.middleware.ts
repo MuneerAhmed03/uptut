@@ -41,7 +41,7 @@ export const errorHandler = (
   }
 
   if (err instanceof PrismaClientKnownRequestError) {
-    let statusCode = 500;
+    let statusCode = Number(err.code);
     let message = err.message;
     return res.status(statusCode).json({ message });
   }
